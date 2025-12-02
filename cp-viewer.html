@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>Reader | Cross Perspectives</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro&display=swap" rel="stylesheet">
+    <style>.font-serif{font-family:'Crimson Pro',serif}</style></head><body class="bg-black text-zinc-200 flex h-screen overflow-hidden">
+    <aside class="w-64 border-r border-zinc-900 flex flex-col p-4 overflow-y-auto" id="sidebar"></aside>
+    <main class="flex-1 overflow-y-auto p-12 max-w-3xl mx-auto" id="grid"></main>
+    <script src="cp-config.js"></script>
+    <script src="cp-store.js"></script>
+    <script src="cp-renderers.js"></script>
+    <script>
+        const app = {
+            active: null,
+            async init() {
+                await store.init();
+                this.render();
+            },
+            async render() {
+                document.getElementById('sidebar').innerHTML = CONFIG.VOICES.map(v => Renderers.voiceItem(v, this.active === v)).join('');
+                const data = this.active ? await store.getByVoice(this.active) : await store.getAll();
+                document.getElementById('grid').innerHTML = data.length ? data.map(Renderers.insightCard).join('') : Renderers.emptyState();
+            },
+            filterBy(v) { this.active = v; this.render(); }
+        };
+        app.init();
+    </script></body></html>
