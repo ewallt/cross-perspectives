@@ -1,32 +1,118 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <meta charset="UTF-8">
     <title>Studio | Cross Perspectives</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script></head><body class="bg-zinc-950 text-zinc-200 p-6 max-w-2xl mx-auto font-sans">
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-200 p-6 max-w-2xl mx-auto font-sans">
+    
     <header class="flex justify-between mb-8 border-b border-zinc-800 pb-4">
         <h1 class="font-bold">Studio</h1>
-        <a href="cp-viewer.html" class="text-sm text-zinc-500 hover:text-white">Go to Reader →</a>
+        <div class="space-x-4">
+            <span id="status" class="text-xs text-emerald-500 hidden">Saved!</span>
+            <a href="cp-viewer.html" class="text-sm text-zinc-500 hover:text-white">Go to Reader →</a>
+        </div>
     </header>
-    <form id="form" class="space-y-4 bg-zinc-900 p-6 rounded border border-zinc-800">
-        <select id="voice" class="w-full bg-black border border-zinc-800 p-2 rounded"></select>
-        <input id="title" placeholder="Title" class="w-full bg-black border border-zinc-800 p-2 rounded">
-        <textarea id="text" rows="4" placeholder="Insight text..." class="w-full bg-black border border-zinc-800 p-2 rounded"></textarea>
-        <button type="submit" class="w-full bg-zinc-100 text-black font-bold py-2 rounded">Save Insight</button>
+
+    <div id="drop-zone" class="mb-8 border-2 border-dashed border-zinc-800 rounded-lg p-8 text-center transition-colors hover:border-zinc-600 hover:bg-zinc-900 cursor-pointer">
+        <p class="text-zinc-500 pointer-events-none">Drop <span class="text-zinc-300 font-mono">.json</span> content packs here</p>
+        <p class="text-xs text-zinc-600 mt-2 pointer-events-none">Schema: [{ voice, title, text, tags[] }]</p>
+        <input type="file" id="file-input" class="hidden" accept=".json">
+    </div>
+
+    <form id="form" class="space-y-4 bg-zinc-900 p-6 rounded border border-zinc-800 opacity-50 hover:opacity-100 transition-opacity">
+        <h2 class="text-xs uppercase tracking-widest text-zinc-500 mb-2">Manual Entry</h2>
+        <select id="voice" class="w-full bg-black border border-zinc-800 p-2 rounded focus:border-zinc-500 outline-none"></select>
+        <input id="title" placeholder="Title" class="w-full bg-black border border-zinc-800 p-2 rounded focus:border-zinc-500 outline-none">
+        <textarea id="text" rows="4" placeholder="Insight text..." class="w-full bg-black border border-zinc-800 p-2 rounded focus:border-zinc-500 outline-none"></textarea>
+        <button type="submit" class="w-full bg-zinc-100 text-black font-bold py-2 rounded hover:bg-white">Save Single Insight</button>
     </form>
+
     <script src="cp-config.js"></script>
     <script src="cp-store.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             await store.init();
+            
+            // Populate Dropdown
             const sel = document.getElementById('voice');
             CONFIG.VOICES.forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
+
+            // Manual Submit Logic
             document.getElementById('form').onsubmit = async (e) => {
                 e.preventDefault();
                 await store.add({
-                    voice: sel.value, title: document.getElementById('title').value,
-                    text: document.getElementById('text').value, tags: []
+                    voice: sel.value, 
+                    title: document.getElementById('title').value,
+                    text: document.getElementById('text').value, 
+                    tags: []
                 });
-                alert('Saved!'); e.target.reset();
+                showStatus("Insight Saved");
+                e.target.reset();
             };
+
+            // Drag & Drop Logic
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+
+            // Click to open file dialog
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            // Handle File Selection
+            fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+            // Handle Drag Over
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-emerald-500', 'bg-zinc-900');
+            });
+
+            // Handle Drag Leave
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-emerald-500', 'bg-zinc-900');
+            });
+
+            // Handle Drop
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-emerald-500', 'bg-zinc-900');
+                if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+            });
+
+            async function handleFile(file) {
+                if (!file || file.type !== 'application/json') return alert('JSON files only.');
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (!Array.isArray(data)) throw new Error("Root must be an array");
+                        
+                        console.log(`Importing ${data.length} items...`);
+                        let count = 0;
+                        for (const item of data) {
+                            if(item.voice && item.title && item.text) {
+                                await store.add(item);
+                                count++;
+                            }
+                        }
+                        alert(`Successfully imported ${count} insights.`);
+                    } catch (err) {
+                        alert('Import failed: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            function showStatus(msg) {
+                const s = document.getElementById('status');
+                s.textContent = msg;
+                s.classList.remove('hidden');
+                setTimeout(() => s.classList.add('hidden'), 2000);
+            }
         });
-    </script></body></html>
+    </script>
+</body>
+</html>
