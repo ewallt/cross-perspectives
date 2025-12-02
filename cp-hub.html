@@ -1,0 +1,32 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>Studio | Cross Perspectives</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script></head><body class="bg-zinc-950 text-zinc-200 p-6 max-w-2xl mx-auto font-sans">
+    <header class="flex justify-between mb-8 border-b border-zinc-800 pb-4">
+        <h1 class="font-bold">Studio</h1>
+        <a href="cp-viewer.html" class="text-sm text-zinc-500 hover:text-white">Go to Reader →</a>
+    </header>
+    <form id="form" class="space-y-4 bg-zinc-900 p-6 rounded border border-zinc-800">
+        <select id="voice" class="w-full bg-black border border-zinc-800 p-2 rounded"></select>
+        <input id="title" placeholder="Title" class="w-full bg-black border border-zinc-800 p-2 rounded">
+        <textarea id="text" rows="4" placeholder="Insight text..." class="w-full bg-black border border-zinc-800 p-2 rounded"></textarea>
+        <button type="submit" class="w-full bg-zinc-100 text-black font-bold py-2 rounded">Save Insight</button>
+    </form>
+    <script src="cp-config.js"></script>
+    <script src="cp-store.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await store.init();
+            const sel = document.getElementById('voice');
+            CONFIG.VOICES.forEach(v => sel.innerHTML += `<option value="${v}">${v}</option>`);
+            document.getElementById('form').onsubmit = async (e) => {
+                e.preventDefault();
+                await store.add({
+                    voice: sel.value, title: document.getElementById('title').value,
+                    text: document.getElementById('text').value, tags: []
+                });
+                alert('Saved!'); e.target.reset();
+            };
+        });
+    </script></body></html>
