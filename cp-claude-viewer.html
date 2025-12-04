@@ -300,11 +300,13 @@
                     const colors = state.voiceColors[voice];
                     const div = document.createElement('div');
                     div.className = 'flex items-center space-x-2 group cursor-pointer';
+                    // Added data-voice attribute for easier lookup
+                    div.setAttribute('data-voice', voice); 
                     // FIX: Removed 'for' attribute from label to prevent double-firing events
                     div.innerHTML = `
                         <input type="checkbox" id="voice-${voice}" class="hidden" />
                         <div class="w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all"></div>
-                        <label class="text-sm ${colors.text} cursor-pointer flex-1">${voice}</label>
+                        <label class="text-sm ${colors.text} cursor-pointer flex-1 select-none">${voice}</label>
                     `;
                     div.addEventListener('click', () => toggleVoiceFilter(voice, div));
                     voiceFiltersDiv.appendChild(div);
@@ -343,15 +345,19 @@
         function toggleVoiceFilter(voice, element) {
             const checkbox = element.querySelector('input');
             const indicator = element.querySelector('div');
+            const colors = state.voiceColors[voice];
             
             if (state.selectedVoices.has(voice)) {
+                // DESELECT
                 state.selectedVoices.delete(voice);
                 checkbox.checked = false;
-                indicator.classList.remove('bg-opacity-100');
+                // FIX: Explicitly remove the background color class and reset to "empty" state
+                indicator.className = `w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all`;
             } else {
+                // SELECT
                 state.selectedVoices.add(voice);
                 checkbox.checked = true;
-                const colors = state.voiceColors[voice];
+                // FIX: Explicitly add the background color class
                 indicator.className = `w-4 h-4 rounded border-2 ${colors.border} ${colors.bg}`;
             }
             
@@ -403,10 +409,17 @@
             document.getElementById('searchInput').value = '';
             
             // Reset voice checkboxes
-            document.querySelectorAll('#voiceFilters input[type="checkbox"]').forEach(cb => {
-                cb.checked = false;
-                cb.parentElement.querySelector('div').className = 'w-4 h-4 rounded border-2 group-hover:bg-zinc-700 transition-all';
-            });
+            // FIX: Use the data-voice attribute to look up correct border colors
+            const voiceElements = document.getElementById('voiceFilters').children;
+            for (let div of voiceElements) {
+                const voice = div.getAttribute('data-voice');
+                const colors = state.voiceColors[voice];
+                const checkbox = div.querySelector('input');
+                const indicator = div.querySelector('div');
+                
+                checkbox.checked = false;
+                indicator.className = `w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all`;
+            }
             
             // Reset tag pills
             document.querySelectorAll('#tagFilters button').forEach(btn => {
