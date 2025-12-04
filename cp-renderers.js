@@ -1,39 +1,40 @@
 const Renderers = {
     voiceItem: (name, isActive) => `
         <button onclick="app.filterBy('${name}')" 
-            class="w-full text-left px-4 py-3 text-sm rounded-md transition-all duration-200 border border-transparent
+            class="w-full text-left px-3 py-2 text-xs font-medium rounded transition-all duration-200 border border-transparent
             ${isActive 
-                ? 'bg-slate-800 text-sky-100 font-bold border-slate-700 shadow-lg shadow-black/50 translate-x-1' 
-                : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/50'
+                ? 'bg-slate-800 text-emerald-400 border-slate-700 shadow-sm' 
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }">
+            <span class="inline-block w-1.5 h-1.5 rounded-full mr-2 ${isActive ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
             ${name}
         </button>`,
 
     insightCard: (i) => `
-        <div class="mb-12 group relative">
-            <div class="absolute -left-6 top-2 bottom-0 w-px bg-slate-800 group-last:hidden lg:-left-12"></div>
+        <div class="bg-[#151F32] border border-slate-700/50 rounded-lg p-6 hover:border-slate-600 transition-colors shadow-sm group">
             
-            <div class="flex flex-col gap-1 mb-3">
-                <div class="flex justify-between items-baseline">
-                    <h3 class="text-2xl font-bold text-slate-100 font-serif leading-tight group-hover:text-sky-200 transition-colors">
-                        ${i.title}
-                    </h3>
-                    <span class="text-[10px] font-mono text-slate-500 whitespace-nowrap ml-4">
-                        ${new Date(i.created_at).toLocaleDateString()}
-                    </span>
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-100 mb-1 group-hover:text-emerald-400 transition-colors">${i.title}</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-500/80">
+                            ${i.voice}
+                        </span>
+                        <span class="text-slate-600 text-[10px]">•</span>
+                        <span class="text-[10px] font-mono text-slate-500">
+                            ${new Date(i.created_at).toLocaleDateString()}
+                        </span>
+                    </div>
                 </div>
-                <span class="text-xs font-bold tracking-widest uppercase text-cyan-500/80">
-                    ${i.voice}
-                </span>
             </div>
 
-            <p class="font-serif text-lg text-slate-300 leading-relaxed mb-5 border-l-2 border-slate-800 pl-4 group-hover:border-cyan-500/30 transition-colors">
+            <p class="font-serif text-[17px] leading-relaxed text-slate-300 mb-6 pl-1">
                 ${i.text}
             </p>
 
-            <div class="flex flex-wrap gap-2 pl-4">
+            <div class="flex flex-wrap gap-2 pt-4 border-t border-slate-800/50">
                 ${(i.tags || []).map(t => `
-                    <span class="text-[10px] uppercase tracking-wider px-2 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400 group-hover:border-cyan-900/50 group-hover:text-cyan-400 transition-colors">
+                    <span class="text-[10px] uppercase font-bold tracking-wide px-2 py-1 rounded bg-[#0B1120] border border-slate-700 text-slate-400 group-hover:text-slate-300 group-hover:border-slate-600 transition-colors">
                         ${t}
                     </span>
                 `).join('')}
@@ -41,8 +42,8 @@ const Renderers = {
         </div>`,
 
     emptyState: () => `
-        <div class="py-32 text-center opacity-50 select-none">
-            <div class="text-6xl mb-4 text-slate-800">❦</div>
-            <p class="text-slate-500 font-serif italic text-xl">"Select a voice from the archive..."</p>
+        <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-800 rounded-lg bg-slate-900/30">
+            <div class="text-slate-600 mb-2 text-4xl">∅</div>
+            <p class="text-slate-500 font-medium text-sm">No insights found in this collection.</p>
         </div>`
 };
