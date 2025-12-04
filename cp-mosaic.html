@@ -39,12 +39,27 @@
     <!-- NAVIGATION HEADER -->
     <header class="sticky top-0 z-20 bg-[#0B1120]/95 backdrop-blur border-b border-slate-800/60 pt-6 pb-2 px-6">
         <div class="max-w-7xl mx-auto">
-            <div class="flex justify-between items-baseline mb-4">
-                <h1 class="text-xl font-bold text-slate-100 tracking-tight">Theological Mosaic</h1>
-                <!-- Placeholder Link (#) used here to prevent navigation errors if index.html is missing -->
-                <a href="#" class="text-xs font-bold text-slate-500 hover:text-amber-500 transition-colors uppercase tracking-widest">
-                    Return Home
-                </a>
+            <!-- Top Row: Title & Voice Filter -->
+            <div class="flex flex-col md:flex-row md:justify-between md:items-end mb-4 gap-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-100 tracking-tight">Theological Mosaic</h1>
+                    <!-- Placeholder Link (#) used here to prevent navigation errors if index.html is missing -->
+                    <a href="#" class="text-xs font-bold text-slate-500 hover:text-amber-500 transition-colors uppercase tracking-widest">
+                        Return Home
+                    </a>
+                </div>
+
+                <!-- Voice Filter Dropdown -->
+                <div class="relative min-w-[200px]">
+                    <select id="voice-filter" onchange="app.filterVoice(this.value)" 
+                        class="appearance-none w-full bg-slate-900 border border-slate-700 text-slate-300 text-xs font-medium rounded pl-3 pr-8 py-2 focus:outline-none focus:border-amber-500 transition-colors cursor-pointer hover:border-slate-600">
+                        <!-- Options injected by JS -->
+                    </select>
+                    <!-- Custom Arrow Icon -->
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
             </div>
 
             <!-- Horizontal Tag Scroller -->
@@ -67,16 +82,30 @@
 
     <script>
         const app = {
-            activeTag: 'All', // Default state
+            activeTag: 'All', 
+            activeVoice: 'All',
 
             async init() {
                 // Initialize DB connection using the global 'store' from cp-store.js
                 await store.init();
-                this.renderTags();
-                this.renderGrid();
+                this.renderVoices(); // Populate dropdown
+                this.renderTags();   // Populate pills
+                this.renderGrid();   // Show data
             },
 
-            // 1. Render the Horizontal Menu
+            // 1. Render the Voice Dropdown
+            renderVoices() {
+                const select = document.getElementById('voice-filter');
+                const voices = ['All', ...CONFIG.VOICES];
+                
+                select.innerHTML = voices.map(v => 
+                    `<option value="${v}" ${v === this.activeVoice ? 'selected' : ''}>
+                        ${v === 'All' ? 'All Voices' : v}
+                    </option>`
+                ).join('');
+            },
+
+            // 2. Render the Horizontal Menu (Tags)
             renderTags() {
                 // Uses CONFIG from cp-config.js
                 const tags = ['All', ...CONFIG.TAGS];
@@ -85,7 +114,7 @@
                 nav.innerHTML = tags.map(tag => {
                     const isActive = this.activeTag === tag;
                     return `
-                        <button onclick="app.filter('${tag}')" 
+                        <button onclick="app.filterTag('${tag}')" 
                             class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border 
                             ${isActive 
                                 ? 'bg-amber-500/10 text-amber-400 border-amber-500/50 shadow-[0_0_15px_-3px_rgba(245,158,11,0.3)]' 
@@ -96,7 +125,7 @@
                 }).join('');
             },
 
-            // 2. Fetch and Render Data
+            // 3. Fetch and Render Data
             async renderGrid() {
                 const grid = document.getElementById('grid');
                 grid.innerHTML = '<div class="text-slate-600 animate-pulse col-span-full py-20 text-center">Loading Mosaic...</div>';
@@ -104,13 +133,20 @@
                 // Fetch Data
                 const allData = await store.getAll();
                 
-                // Filter Data in Memory (Client-side filtering is instant)
-                const filtered = this.activeTag === 'All' 
-                    ? allData 
-                    : allData.filter(item => (item.tags || []).includes(this.activeTag));
+                // Filter Data in Memory
+                const filtered = allData.filter(item => {
+                    const matchesTag = this.activeTag === 'All' || (item.tags || []).includes(this.activeTag);
+                    const matchesVoice = this.activeVoice === 'All' || item.voice === this.activeVoice;
+                    return matchesTag && matchesVoice;
+                });
 
+                // Empty State
                 if (filtered.length === 0) {
-                    grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-600 italic">No insights found for "${this.activeTag}"</div>`;
+                    const contextMsg = this.activeVoice !== 'All' 
+                        ? `No insights found for <strong>${this.activeVoice}</strong> under the topic "<strong>${this.activeTag}</strong>".`
+                        : `No insights found for "<strong>${this.activeTag}</strong>".`;
+                        
+                    grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 italic text-sm border border-dashed border-slate-800 rounded bg-slate-900/30">${contextMsg}</div>`;
                     return;
                 }
 
@@ -149,10 +185,15 @@
                 `).join('');
             },
 
-            filter(tag) {
+            filterTag(tag) {
                 this.activeTag = tag;
-                this.renderTags(); // Re-render menu to update active state
-                this.renderGrid(); // Re-render grid with new filter
+                this.renderTags(); 
+                this.renderGrid();
+            },
+
+            filterVoice(voice) {
+                this.activeVoice = voice;
+                this.renderGrid();
             }
         };
 
