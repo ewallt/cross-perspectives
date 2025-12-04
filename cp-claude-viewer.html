@@ -188,11 +188,40 @@
         </div>
     </div>
 
-    <!-- Include the data layer scripts -->
-    <script src="cp-config.js"></script>
-    <script src="cp-store.js"></script>
+    <!-- INTEGRATION LAYER: DEFINING THE STORE AND CONFIG MANUALLY -->
+    <script>
+        // 1. Define the Configuration (Matches your existing CP app)
+        const CONFIG = {
+            APP_TITLE: "Cross Perspectives",
+            VERSION: "1.0",
+            VOICES: [
+                "Graham Maxwell", "Marilyn Campbell", "F. T. Wright", "J. D. Myers", "Greg Boyd",
+                "René Girard", "Ellen G. White", "N. T. Wright", "Richard B. Hays", 
+                "Jürgen Moltmann", "John Chrysostom", "Tertullian", "The Analyst (AI Synthesis Voice)"
+            ],
+            TAGS: ["Atonement", "Non-Violence", "Justice", "Trinity", "Scapegoat", "Judgment"]
+        };
 
-    <!-- Main Application Logic -->
+        // 2. Define the Store Class (Dexie Wrapper)
+        // This tells the app how to find the 'CrossPerspectivesDB' that already exists in your browser.
+        class CrossStore {
+            constructor() {
+                this.db = new Dexie("CrossPerspectivesDB");
+                // The schema must match exactly what you created in cp-store.js
+                this.db.version(1).stores({ insights: '++id, voice, title, *tags, created_at' });
+            }
+            async init() {
+                if (!this.db.isOpen()) await this.db.open();
+            }
+            async getAll() { return await this.db.insights.orderBy('created_at').reverse().toArray(); }
+            async getByVoice(voice) { return await this.db.insights.where('voice').equals(voice).toArray(); }
+        }
+
+        // 3. Instantiate the store so the app logic below can use it
+        const store = new CrossStore();
+    </script>
+
+    <!-- Main Application Logic (Original Code from Other AI) -->
     <script>
         // Application State
         const state = {
