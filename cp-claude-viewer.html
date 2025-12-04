@@ -14,6 +14,14 @@
         
         .insight-card {
             animation: fadeIn 0.3s ease-out;
+            transition: all 0.2s ease;
+        }
+        
+        .insight-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+            border-width: 2px;
+            filter: brightness(1.1);
         }
         
         .voice-lane {
@@ -126,13 +134,13 @@
                     <!-- Voices Filter -->
                     <div>
                         <label class="block text-sm font-semibold text-zinc-400 mb-3">Voices</label>
-                        <!-- "All Voices" indicator when nothing is selected -->
-                        <div id="allVoicesIndicator" class="hidden mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                        <!-- "All Voices" indicator - grays out when voices are selected -->
+                        <div id="allVoicesIndicator" class="mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg transition-all">
                             <div class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <span class="text-xs font-medium text-emerald-400">Viewing all voices</span>
+                                <span class="text-xs font-medium transition-colors">Viewing all voices</span>
                             </div>
                         </div>
                         <div id="voiceFilters" class="space-y-2"></div>
@@ -350,10 +358,19 @@
 
         function updateAllVoicesIndicator() {
             const indicator = document.getElementById('allVoicesIndicator');
+            const svg = indicator.querySelector('svg');
+            const text = indicator.querySelector('span');
+            
             if (state.selectedVoices.size === 0) {
-                indicator.classList.remove('hidden');
+                // Active state - green/emerald
+                indicator.className = 'mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg transition-all';
+                svg.className = 'w-4 h-4 text-emerald-400 transition-colors';
+                text.className = 'text-xs font-medium text-emerald-400 transition-colors';
             } else {
-                indicator.classList.add('hidden');
+                // Inactive state - gray/muted
+                indicator.className = 'mb-3 px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg transition-all';
+                svg.className = 'w-4 h-4 text-zinc-600 transition-colors';
+                text.className = 'text-xs font-medium text-zinc-600 transition-colors';
             }
         }
 
@@ -571,7 +588,7 @@
                 : '';
             
             return `
-                <div class="insight-card ${colors.bg} border ${colors.border} rounded-lg p-4 cursor-pointer hover:shadow-lg hover:shadow-${colors.accent}/20 transition-all" data-insight='${JSON.stringify(insight).replace(/'/g, "&#39;")}'>
+                <div class="insight-card ${colors.bg} border ${colors.border} rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all" data-insight='${JSON.stringify(insight).replace(/'/g, "&#39;")}' style="border-width: 2px;">
                     <div class="flex items-start justify-between mb-2">
                         <span class="text-xs ${colors.text} font-semibold">${insight.voice}</span>
                         <span class="text-xs text-zinc-500">${date}</span>
