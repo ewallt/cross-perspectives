@@ -300,10 +300,11 @@
                     const colors = state.voiceColors[voice];
                     const div = document.createElement('div');
                     div.className = 'flex items-center space-x-2 group cursor-pointer';
+                    // FIX: Removed 'for' attribute from label to prevent double-firing events
                     div.innerHTML = `
                         <input type="checkbox" id="voice-${voice}" class="hidden" />
                         <div class="w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all"></div>
-                        <label for="voice-${voice}" class="text-sm ${colors.text} cursor-pointer flex-1">${voice}</label>
+                        <label class="text-sm ${colors.text} cursor-pointer flex-1">${voice}</label>
                     `;
                     div.addEventListener('click', () => toggleVoiceFilter(voice, div));
                     voiceFiltersDiv.appendChild(div);
