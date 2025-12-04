@@ -79,18 +79,8 @@
                         Exploring theological insights across voices and topics
                     </p>
                 </div>
-                <div class="flex items-center space-x-6">
-                    <!-- Global Filter (Header) -->
-                    <div class="relative group">
-                        <select id="headerVoiceSelect" class="appearance-none bg-black/30 border border-purple-500/30 text-purple-100 text-sm rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 cursor-pointer hover:bg-black/40 transition-colors">
-                            <option value="">All Voices (Global)</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-purple-300">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-
-                    <div class="text-right text-sm text-purple-300/70 border-l border-purple-500/20 pl-6">
+                <div class="flex items-center space-x-4">
+                    <div class="text-right text-sm text-purple-300/70">
                         <div id="insightCount">0 insights</div>
                         <div id="voiceCount">0 voices</div>
                     </div>
@@ -136,6 +126,15 @@
                     <!-- Voices Filter -->
                     <div>
                         <label class="block text-sm font-semibold text-zinc-400 mb-3">Voices</label>
+                        <!-- "All Voices" indicator when nothing is selected -->
+                        <div id="allVoicesIndicator" class="hidden mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-xs font-medium text-emerald-400">Viewing all voices</span>
+                            </div>
+                        </div>
                         <div id="voiceFilters" class="space-y-2"></div>
                     </div>
 
@@ -259,6 +258,15 @@
             });
         }
 
+        // Helper function to auto-assign colors to unknown voices
+        function getVoiceColor(voice) {
+            if (!state.voiceColors[voice]) {
+                const assignedCount = Object.keys(state.voiceColors).length;
+                state.voiceColors[voice] = colorPalette[assignedCount % colorPalette.length];
+            }
+            return state.voiceColors[voice];
+        }
+
         async function init() {
             try {
                 await store.init();
@@ -273,6 +281,7 @@
                 
                 initFilters();
                 updateStats();
+                updateAllVoicesIndicator();
                 renderView();
                 
                 document.getElementById('loadingState').classList.add('hidden');
@@ -290,30 +299,14 @@
         }
 
         function initFilters() {
-            // Header Dropdown (Global Filter)
-            const headerSelect = document.getElementById('headerVoiceSelect');
-            if (CONFIG && CONFIG.VOICES) {
-                CONFIG.VOICES.forEach(voice => {
-                    const option = document.createElement('option');
-                    option.value = voice;
-                    option.textContent = voice;
-                    headerSelect.appendChild(option);
-                });
-            }
-            
-            headerSelect.addEventListener('change', (e) => {
-                const selected = e.target.value;
-                state.selectedVoices.clear();
-                if (selected) state.selectedVoices.add(selected);
-                syncSidebarCheckboxes();
-                applyFilters();
-            });
-
-            // Sidebar Voice Filters
+            // Sidebar Voice Filters - ALPHABETICALLY SORTED
             const voiceFiltersDiv = document.getElementById('voiceFilters');
             if (CONFIG && CONFIG.VOICES) {
-                CONFIG.VOICES.forEach(voice => {
-                    const colors = state.voiceColors[voice];
+                // Sort voices alphabetically
+                const sortedVoices = [...CONFIG.VOICES].sort((a, b) => a.localeCompare(b));
+                
+                sortedVoices.forEach(voice => {
+                    const colors = getVoiceColor(voice);
                     const div = document.createElement('div');
                     div.className = 'flex items-center space-x-2 group cursor-pointer';
                     div.setAttribute('data-voice', voice); 
@@ -355,11 +348,20 @@
             document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
         }
 
+        function updateAllVoicesIndicator() {
+            const indicator = document.getElementById('allVoicesIndicator');
+            if (state.selectedVoices.size === 0) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+
         function syncSidebarCheckboxes() {
             const voiceElements = document.getElementById('voiceFilters').children;
             for (let div of voiceElements) {
                 const voice = div.getAttribute('data-voice');
-                const colors = state.voiceColors[voice];
+                const colors = getVoiceColor(voice);
                 const checkbox = div.querySelector('input');
                 const indicator = div.querySelector('div');
                 
@@ -379,16 +381,6 @@
             }
         }
 
-        function syncHeaderDropdown() {
-            const dropdown = document.getElementById('headerVoiceSelect');
-            if (state.selectedVoices.size === 1) {
-                const val = state.selectedVoices.values().next().value;
-                dropdown.value = val;
-            } else {
-                dropdown.value = "";
-            }
-        }
-
         function toggleVoiceFilter(voice, element) {
             if (state.selectedVoices.has(voice)) {
                 state.selectedVoices.delete(voice);
@@ -396,7 +388,7 @@
                 state.selectedVoices.add(voice);
             }
             syncSidebarCheckboxes();
-            syncHeaderDropdown();
+            updateAllVoicesIndicator();
             applyFilters();
         }
 
@@ -439,7 +431,7 @@
             document.getElementById('searchInput').value = '';
             
             syncSidebarCheckboxes();
-            syncHeaderDropdown();
+            updateAllVoicesIndicator();
             
             document.querySelectorAll('#tagFilters button').forEach(btn => {
                 btn.classList.remove('bg-purple-600', 'text-white');
@@ -518,7 +510,7 @@
             
             let html = '<div class="space-y-8">';
             Object.entries(byVoice).forEach(([voice, insights]) => {
-                const colors = state.voiceColors[voice];
+                const colors = getVoiceColor(voice);
                 html += `
                     <div class="voice-lane">
                         <div class="flex items-center mb-4">
@@ -562,7 +554,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-6">
                 `;
                 insights.forEach(insight => {
-                    const colors = state.voiceColors[insight.voice];
+                    const colors = getVoiceColor(insight.voice);
                     html += createInsightCard(insight, colors);
                 });
                 html += `</div></div>`;
@@ -600,7 +592,6 @@
             });
         }
 
-        // Fisher-Yates Shuffle for true randomness
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -614,7 +605,7 @@
             const panel = document.getElementById('detailPanel');
             const content = document.getElementById('detailContent');
             
-            const colors = state.voiceColors[insight.voice];
+            const colors = getVoiceColor(insight.voice);
             const date = new Date(insight.created_at).toLocaleDateString('en-US', { 
                 month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
             });
@@ -622,7 +613,6 @@
                 ? insight.tags.map(tag => `<span class="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full text-sm">${tag}</span>`).join('')
                 : '<span class="text-zinc-500 text-sm italic">No tags</span>';
             
-            // Calculate overlapping voices for the dropdown
             const connectedVoices = new Set();
             if (insight.tags) {
                 state.allInsights.forEach(i => {
@@ -659,7 +649,6 @@
                         <div class="flex flex-wrap gap-2">${tags}</div>
                     </div>
                     
-                    <!-- Related Insights Section with Dropdown -->
                     <div class="border-t border-zinc-800 pt-6">
                         <div class="flex justify-between items-center mb-4">
                             <h5 class="text-sm font-semibold text-zinc-400">Related Insights</h5>
@@ -677,12 +666,10 @@
             
             panel.classList.remove('hidden');
             
-            // Add listener to the new dropdown
             document.getElementById('relatedVoiceFilter').addEventListener('change', (e) => {
                 loadRelatedInsights(insight, e.target.value);
             });
 
-            // Initial load (randomized)
             loadRelatedInsights(insight);
         }
 
@@ -695,24 +682,17 @@
         function loadRelatedInsights(insight, filterVoice = null) {
             const container = document.getElementById('relatedInsights');
             
-            // 1. Filter candidates (must not be current card, must overlap tags)
             let candidates = state.allInsights.filter(i => {
                 if (i === insight) return false;
-                if (filterVoice && i.voice !== filterVoice) return false; // Strict filter if selected
-                
-                // If filterVoice is selected, we already filtered by voice, so just check tags
-                // If NO filterVoice (Surprise Me), we check for ANY overlap (Voice OR Tag)
-                // Actually, standard logic is usually Tag overlap.
+                if (filterVoice && i.voice !== filterVoice) return false;
                 
                 const sameVoice = i.voice === insight.voice;
                 const hasTagOverlap = i.tags && insight.tags && i.tags.some(tag => insight.tags.includes(tag));
                 
                 if (filterVoice) {
-                    // If user specifically asked for this voice, just ensure it matches tag overlap or is relevant
                     return hasTagOverlap;
                 }
 
-                // Default "Surprise Me" Logic:
                 return sameVoice || hasTagOverlap;
             });
 
@@ -721,14 +701,11 @@
                 return;
             }
 
-            // 2. Shuffle! (This fixes the "Always F.T. Wright" bias)
             shuffleArray(candidates);
-
-            // 3. Slice top 5
             const related = candidates.slice(0, 5);
             
             container.innerHTML = related.map(r => {
-                const colors = state.voiceColors[r.voice];
+                const colors = getVoiceColor(r.voice);
                 return `
                     <div class="p-3 bg-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-750 transition-all border border-transparent hover:border-zinc-600" onclick='showDetail(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
                         <div class="flex items-center justify-between mb-1">
