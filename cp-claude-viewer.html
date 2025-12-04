@@ -351,14 +351,22 @@
                 // DESELECT
                 state.selectedVoices.delete(voice);
                 checkbox.checked = false;
-                // FIX: Explicitly remove the background color class and reset to "empty" state
+                
+                // VISUAL RESET
                 indicator.className = `w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all`;
+                indicator.style.backgroundColor = '';
+                indicator.style.borderColor = '';
+                indicator.innerHTML = '';
             } else {
                 // SELECT
                 state.selectedVoices.add(voice);
                 checkbox.checked = true;
-                // FIX: Explicitly add the background color class
-                indicator.className = `w-4 h-4 rounded border-2 ${colors.border} ${colors.bg}`;
+                
+                // VISUAL CHECK
+                indicator.className = `w-4 h-4 rounded border-2 ${colors.border} flex items-center justify-center`;
+                indicator.style.backgroundColor = colors.accent;
+                indicator.style.borderColor = colors.accent;
+                indicator.innerHTML = `<svg class="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
             }
             
             applyFilters();
@@ -409,7 +417,6 @@
             document.getElementById('searchInput').value = '';
             
             // Reset voice checkboxes
-            // FIX: Use the data-voice attribute to look up correct border colors
             const voiceElements = document.getElementById('voiceFilters').children;
             for (let div of voiceElements) {
                 const voice = div.getAttribute('data-voice');
@@ -419,6 +426,9 @@
                 
                 checkbox.checked = false;
                 indicator.className = `w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all`;
+                indicator.style.backgroundColor = '';
+                indicator.style.borderColor = '';
+                indicator.innerHTML = '';
             }
             
             // Reset tag pills
