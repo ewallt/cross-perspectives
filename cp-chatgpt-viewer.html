@@ -1419,12 +1419,12 @@
         metaMain.className = 'detail-meta-main';
         const voiceSpan = document.createElement('span');
         voiceSpan.innerHTML = `<strong>${insight.voice || 'Unknown voice'}</strong>`;
-        const divider = document.createElement('span');
-        divider.className = 'meta-dot';
+        const metaDot = document.createElement('span');
+        metaDot.className = 'meta-dot';
         const dateSpan = document.createElement('span');
         dateSpan.textContent = formatDate(insight.created_at);
         metaMain.appendChild(voiceSpan);
-        metaMain.appendChild(divider);
+        metaMain.appendChild(metaDot);
         metaMain.appendChild(dateSpan);
 
         const actions = document.createElement('div');
