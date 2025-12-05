@@ -3,370 +3,644 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cross Perspectives</title>
+    <title>Cross Perspectives - Theological Knowledge Base</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .font-serif { font-family: 'Crimson Pro', serif; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .insight-card {
+            animation: fadeIn 0.3s ease-out;
+            transition: all 0.2s ease;
+        }
+        
+        .insight-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+            border-width: 2px;
+            filter: brightness(1.1);
+        }
+        
+        .voice-lane {
+            transition: all 0.3s ease;
+        }
+        
+        .voice-lane.dimmed {
+            opacity: 0.2;
+        }
+        
+        .tag-pill {
+            transition: all 0.2s ease;
+        }
+        
+        .tag-pill.highlighted {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px currentColor;
+        }
+        
+        .connection-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0.3;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .connection-line.active {
+            opacity: 0.8;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #18181b;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f46;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52525b;
+        }
     </style>
 </head>
-<body class="bg-[#0B1120] text-slate-300 selection:bg-emerald-900 selection:text-white">
-
-<div class="flex h-screen overflow-hidden">
-    
-    <!-- SIDEBAR -->
-    <aside class="w-80 bg-[#0F172A] border-r border-slate-800/60 flex flex-col overflow-hidden">
-        
+<body class="bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div class="flex flex-col h-screen">
         <!-- Header -->
-        <div class="flex-shrink-0 p-6 border-b border-slate-800/60">
-            <h1 class="text-2xl font-bold text-emerald-400 tracking-tight mb-1">Cross Perspectives</h1>
-            <p class="text-xs text-slate-500 font-mono" id="status-text">Loading...</p>
-        </div>
-
-        <!-- Scrollable Filters -->
-        <div class="flex-1 overflow-y-auto px-6 py-6 space-y-8">
-            
-            <!-- Voice Filter -->
-            <div>
-                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Filter by Voice</h3>
-                <div id="voice-checkboxes" class="space-y-2">
-                    <!-- Populated dynamically -->
+        <header class="bg-gradient-to-r from-violet-950 via-purple-950 to-indigo-950 border-b border-purple-800/30 px-6 py-4 shadow-xl">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-purple-300">
+                        Cross Perspectives
+                    </h1>
+                    <p class="text-sm text-purple-300/70 mt-1">
+                        Exploring theological insights across voices and topics
+                    </p>
                 </div>
-            </div>
-
-            <!-- Topic Filter -->
-            <div>
-                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Filter by Topic</h3>
-                <div id="topic-checkboxes" class="space-y-2">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Footer Links -->
-        <div class="flex-shrink-0 p-6 border-t border-slate-800/60 space-y-2">
-            <a href="cp-hub.html" class="block text-xs text-slate-500 hover:text-emerald-400 transition-colors">
-                → Studio Hub
-            </a>
-            <a href="cp-viewer.html" class="block text-xs text-slate-500 hover:text-emerald-400 transition-colors">
-                → Simple Reader
-            </a>
-        </div>
-
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col overflow-hidden">
-        
-        <!-- All Voices Indicator -->
-        <div id="all-voices-banner" class="flex-shrink-0 bg-emerald-500/10 border-b border-emerald-500/20 px-8 py-3 text-center">
-            <span class="text-sm font-medium text-emerald-400">Viewing All Voices</span>
-        </div>
-
-        <!-- Scrollable Content -->
-        <div class="flex-1 overflow-y-auto" id="scroll-container">
-            <div class="max-w-5xl mx-auto p-8">
-                <div id="grid" class="space-y-6"></div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- DETAIL PANEL (Hidden by default) -->
-    <aside id="detail-panel" class="w-[600px] bg-[#0F172A] border-l border-slate-800/60 overflow-y-auto hidden">
-        <div class="p-8">
-            <button onclick="app.closeDetail()" class="mb-6 text-xs text-slate-500 hover:text-emerald-400 transition-colors">
-                ← Back to Grid
-            </button>
-            <div id="detail-content"></div>
-            <div id="related-content" class="mt-8"></div>
-        </div>
-    </aside>
-
-</div>
-
-<!-- DEPENDENCIES -->
-<script src="cp-config.js"></script>
-<script src="cp-store.js"></script>
-<script src="cp-renderers.js"></script>
-
-<script>
-const app = {
-    selectedVoices: [],
-    selectedTopics: [],
-    activeDetail: null,
-
-    async init() {
-        await store.init();
-        
-        // Get counts
-        const total = await store.db.insights.count();
-        const voiceCount = (await store.db.insights.orderBy('voice').uniqueKeys()).length;
-        
-        document.getElementById('status-text').textContent = 
-            `${total} insights • ${voiceCount} voices`;
-
-        // Populate filters from database
-        await this.renderVoiceCheckboxes();
-        await this.renderTopicCheckboxes();
-        
-        // Render grid
-        this.render();
-    },
-
-    async renderVoiceCheckboxes() {
-        const container = document.getElementById('voice-checkboxes');
-        
-        // Get unique voices from database, sorted alphabetically
-        const voices = await store.db.insights.orderBy('voice').uniqueKeys();
-        voices.sort();
-        
-        container.innerHTML = voices.map(voice => {
-            const color = this.getVoiceColor(voice);
-            return `
-                <label class="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" value="${voice}" 
-                        onchange="app.toggleVoice('${voice}')"
-                        class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer">
-                    <span class="text-sm text-slate-300 group-hover:text-slate-100 transition-colors flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full" style="background-color: ${color};"></span>
-                        ${voice}
-                    </span>
-                </label>
-            `;
-        }).join('');
-    },
-
-    async renderTopicCheckboxes() {
-        const container = document.getElementById('topic-checkboxes');
-        
-        // Get unique tags from all insights
-        const allInsights = await store.getAll();
-        const tagSet = new Set();
-        allInsights.forEach(insight => {
-            (insight.tags || []).forEach(tag => tagSet.add(tag));
-        });
-        
-        const topics = Array.from(tagSet).sort();
-        
-        container.innerHTML = topics.map(topic => `
-            <label class="flex items-center gap-2 cursor-pointer group">
-                <input type="checkbox" value="${topic}"
-                    onchange="app.toggleTopic('${topic}')"
-                    class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer">
-                <span class="text-sm text-slate-300 group-hover:text-slate-100 transition-colors">
-                    ${topic}
-                </span>
-            </label>
-        `).join('');
-    },
-
-    toggleVoice(voice) {
-        const idx = this.selectedVoices.indexOf(voice);
-        if (idx > -1) this.selectedVoices.splice(idx, 1);
-        else this.selectedVoices.push(voice);
-        this.render();
-    },
-
-    toggleTopic(topic) {
-        const idx = this.selectedTopics.indexOf(topic);
-        if (idx > -1) this.selectedTopics.splice(idx, 1);
-        else this.selectedTopics.push(topic);
-        this.render();
-    },
-
-    async render() {
-        const data = await store.getAll();
-        
-        // Apply filters
-        let filtered = data;
-        
-        if (this.selectedVoices.length > 0) {
-            filtered = filtered.filter(i => this.selectedVoices.includes(i.voice));
-        }
-        
-        if (this.selectedTopics.length > 0) {
-            filtered = filtered.filter(i => 
-                (i.tags || []).some(t => this.selectedTopics.includes(t))
-            );
-        }
-
-        // Update "All Voices" banner
-        const banner = document.getElementById('all-voices-banner');
-        if (this.selectedVoices.length === 0) {
-            banner.classList.remove('opacity-30');
-        } else {
-            banner.classList.add('opacity-30');
-        }
-
-        // Render grid
-        this.renderGrid(filtered);
-    },
-
-    renderGrid(data) {
-        const grid = document.getElementById('grid');
-        
-        if (data.length === 0) {
-            grid.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/20">
-                    <div class="text-slate-600 mb-2 text-4xl">∅</div>
-                    <p class="text-slate-500 font-medium text-sm">No insights match your filters.</p>
-                </div>`;
-            return;
-        }
-
-        // Group by voice
-        const grouped = {};
-        data.forEach(item => {
-            if (!grouped[item.voice]) grouped[item.voice] = [];
-            grouped[item.voice].push(item);
-        });
-
-        // Render sections
-        grid.innerHTML = Object.keys(grouped).sort().map(voice => {
-            const color = this.getVoiceColor(voice);
-            const items = grouped[voice];
-            
-            return `
-                <div class="mb-8">
-                    <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-800/60">
-                        <span class="w-3 h-3 rounded-full" style="background-color: ${color};"></span>
-                        <h2 class="text-xl font-bold text-slate-200">${voice}</h2>
-                        <span class="text-xs text-slate-500 font-mono">${items.length} insight${items.length !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div class="space-y-4">
-                        ${items.map(item => this.renderCard(item)).join('')}
+                <div class="flex items-center space-x-4">
+                    <div class="text-right text-sm text-purple-300/70">
+                        <div id="insightCount">0 insights</div>
+                        <div id="voiceCount">0 voices</div>
                     </div>
                 </div>
-            `;
-        }).join('');
-    },
-
-    renderCard(item) {
-        const color = this.getVoiceColor(item.voice);
-        return `
-            <div onclick="app.showDetail(${item.id})" 
-                class="bg-[#151F32] border border-slate-700/50 rounded-xl p-6 cursor-pointer hover:border-slate-600 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-1 hover:scale-[1.01] hover:brightness-110 transition-all duration-200 group">
-                
-                <div class="flex items-start justify-between mb-3">
-                    <h3 class="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors font-serif flex-1">
-                        ${item.title}
-                    </h3>
-                    <span class="text-[10px] font-mono text-slate-500 ml-4">
-                        ${new Date(item.created_at).toLocaleDateString()}
-                    </span>
-                </div>
-
-                <p class="font-serif text-base leading-relaxed text-slate-300 mb-4 line-clamp-3 border-l-2 pl-4 group-hover:border-emerald-500/30 transition-colors" 
-                    style="border-color: ${color};">
-                    ${item.text}
-                </p>
-
-                <div class="flex flex-wrap gap-2">
-                    ${(item.tags || []).map(t => `
-                        <span class="text-[10px] uppercase font-bold tracking-wide px-2 py-1 rounded bg-[#0B1120] border border-slate-700 text-slate-400">
-                            ${t}
-                        </span>
-                    `).join('')}
-                </div>
             </div>
-        `;
-    },
+        </header>
 
-    async showDetail(id) {
-        this.activeDetail = id;
-        const item = await store.db.insights.get(id);
-        const color = this.getVoiceColor(item.voice);
+        <!-- Main Content -->
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Left Sidebar: Filters -->
+            <div class="w-80 bg-zinc-900 border-r border-zinc-800 overflow-y-auto">
+                <div class="p-6 space-y-6">
+                    <!-- Search -->
+                    <div>
+                        <label class="block text-sm font-semibold text-zinc-400 mb-2">Search Insights</label>
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Search text, titles, voices..."
+                            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                    </div>
 
-        document.getElementById('detail-content').innerHTML = `
-            <div class="mb-6">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="w-3 h-3 rounded-full" style="background-color: ${color};"></span>
-                    <span class="text-xs font-bold uppercase tracking-widest text-emerald-500/90">
-                        ${item.voice}
-                    </span>
-                    <span class="text-xs font-mono text-slate-500">
-                        ${new Date(item.created_at).toLocaleDateString()}
-                    </span>
-                </div>
-                <h2 class="text-3xl font-bold text-slate-100 font-serif mb-4">${item.title}</h2>
-            </div>
-
-            <div class="prose prose-invert prose-slate max-w-none">
-                <p class="font-serif text-lg leading-relaxed text-slate-300 border-l-4 pl-6" style="border-color: ${color};">
-                    ${item.text}
-                </p>
-            </div>
-
-            <div class="flex flex-wrap gap-2 mt-6">
-                ${(item.tags || []).map(t => `
-                    <span class="text-xs uppercase font-bold tracking-wide px-3 py-1.5 rounded-lg bg-[#0B1120] border border-slate-700 text-slate-300">
-                        ${t}
-                    </span>
-                `).join('')}
-            </div>
-        `;
-
-        await this.renderRelated(item);
-        document.getElementById('detail-panel').classList.remove('hidden');
-    },
-
-    async renderRelated(item) {
-        const all = await store.getAll();
-        const related = all
-            .filter(i => i.id !== item.id && (i.tags || []).some(t => (item.tags || []).includes(t)))
-            .slice(0, 3);
-
-        if (related.length === 0) {
-            document.getElementById('related-content').innerHTML = '';
-            return;
-        }
-
-        document.getElementById('related-content').innerHTML = `
-            <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Related Insights</h3>
-            <div class="space-y-3">
-                ${related.map(r => {
-                    const color = this.getVoiceColor(r.voice);
-                    return `
-                        <div onclick="app.showDetail(${r.id})" 
-                            class="bg-[#1E293B] border border-slate-700/50 rounded-lg p-4 cursor-pointer hover:border-slate-600 transition-colors">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="w-2 h-2 rounded-full" style="background-color: ${color};"></span>
-                                <span class="text-xs font-bold text-slate-400">${r.voice}</span>
+                    <!-- Voices Filter -->
+                    <div>
+                        <label class="block text-sm font-semibold text-zinc-400 mb-3">Voices</label>
+                        <!-- "All Voices" indicator - grays out when voices are selected -->
+                        <div id="allVoicesIndicator" class="mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg transition-all">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-xs font-medium transition-colors">Viewing all voices</span>
                             </div>
-                            <h4 class="text-sm font-semibold text-slate-200 font-serif">${r.title}</h4>
                         </div>
-                    `;
-                }).join('')}
+                        <div id="voiceFilters" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Tags Filter -->
+                    <div>
+                        <label class="block text-sm font-semibold text-zinc-400 mb-3">Topics</label>
+                        <div id="tagFilters" class="flex flex-wrap gap-2"></div>
+                    </div>                    
+
+                    <!-- Clear Filters -->
+                    <button 
+                        id="clearFilters"
+                        class="w-full px-4 py-2 bg-zinc-800 text-zinc-400 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-all"
+                    >
+                        Clear All Filters
+                    </button>
+                </div>
             </div>
-        `;
-    },
 
-    closeDetail() {
-        this.activeDetail = null;
-        document.getElementById('detail-panel').classList.add('hidden');
-    },
+            <!-- Main Viewing Area: Cross-Hatch Layout -->
+            <div class="flex-1 overflow-hidden bg-zinc-950">
+                <div id="mainView" class="h-full overflow-y-auto p-6">
+                    <div id="loadingState" class="flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+                            <p class="text-zinc-400 mt-4">Loading insights...</p>
+                        </div>
+                    </div>
+                    <div id="contentArea" class="hidden"></div>
+                    <div id="emptyState" class="hidden flex items-center justify-center h-full">
+                        <div class="text-center max-w-md">
+                            <svg class="mx-auto h-24 w-24 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <h3 class="mt-4 text-xl font-semibold text-zinc-400">No insights found</h3>
+                            <p class="mt-2 text-sm text-zinc-500">Try adjusting your filters or search criteria</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    getVoiceColor(voice) {
-        const colors = [
-            '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
-            '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+            <!-- Right Sidebar: Detail View -->
+            <div id="detailPanel" class="hidden w-96 bg-zinc-900 border-l border-zinc-800 overflow-y-auto shadow-2xl relative z-10">
+                <div id="detailContent" class="p-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTEGRATION LAYER: DEFINING THE STORE AND CONFIG MANUALLY -->
+    <script>
+        const CONFIG = {
+            APP_TITLE: "Cross Perspectives",
+            VERSION: "1.0",
+            VOICES: [
+                "Graham Maxwell", "Marilyn Campbell", "F. T. Wright", "J. D. Myers", "Greg Boyd",
+                "René Girard", "Ellen G. White", "N. T. Wright", "Richard B. Hays", 
+                "Jürgen Moltmann", "John Chrysostom", "Tertullian", "The Analyst (AI Synthesis Voice)"
+            ],
+            TAGS: ["Atonement", "Non-Violence", "Justice", "Trinity", "Scapegoat", "Judgment"]
+        };
+
+        class CrossStore {
+            constructor() {
+                this.db = new Dexie("CrossPerspectivesDB");
+                this.db.version(1).stores({ insights: '++id, voice, title, *tags, created_at' });
+            }
+            async init() {
+                if (!this.db.isOpen()) await this.db.open();
+            }
+            async getAll() { return await this.db.insights.orderBy('created_at').reverse().toArray(); }
+            async getByVoice(voice) { return await this.db.insights.where('voice').equals(voice).toArray(); }
+        }
+
+        const store = new CrossStore();
+    </script>
+
+    <!-- Main Application Logic -->
+    <script>
+        const state = {
+            allInsights: [],
+            filteredInsights: [],
+            selectedVoices: new Set(),
+            selectedTags: new Set(),
+            searchQuery: '',
+            sortBy: 'recent',
+            selectedInsight: null,
+            voiceColors: {}
+        };
+
+        const colorPalette = [
+            { bg: 'bg-violet-500/20', border: 'border-violet-500', text: 'text-violet-300', accent: '#8b5cf6' },
+            { bg: 'bg-purple-500/20', border: 'border-purple-500', text: 'text-purple-300', accent: '#a855f7' },
+            { bg: 'bg-fuchsia-500/20', border: 'border-fuchsia-500', text: 'text-fuchsia-300', accent: '#d946ef' },
+            { bg: 'bg-pink-500/20', border: 'border-pink-500', text: 'text-pink-300', accent: '#ec4899' },
+            { bg: 'bg-rose-500/20', border: 'border-rose-500', text: 'text-rose-300', accent: '#f43f5e' },
+            { bg: 'bg-blue-500/20', border: 'border-blue-500', text: 'text-blue-300', accent: '#3b82f6' },
+            { bg: 'bg-cyan-500/20', border: 'border-cyan-500', text: 'text-cyan-300', accent: '#06b6d4' },
+            { bg: 'bg-emerald-500/20', border: 'border-emerald-500', text: 'text-emerald-300', accent: '#10b981' },
+            { bg: 'bg-amber-500/20', border: 'border-amber-500', text: 'text-amber-300', accent: '#f59e0b' },
+            { bg: 'bg-orange-500/20', border: 'border-orange-500', text: 'text-orange-300', accent: '#f97316' }
         ];
-        const voices = CONFIG?.VOICES || [];
-        const index = voices.indexOf(voice);
-        return index !== -1 ? colors[index % colors.length] : colors[0];
-    }
-};
 
-app.init();
-</script>
+        function assignVoiceColors(voices) {
+            voices.forEach((voice, index) => {
+                state.voiceColors[voice] = colorPalette[index % colorPalette.length];
+            });
+        }
 
+        // Helper function to auto-assign colors to unknown voices
+        function getVoiceColor(voice) {
+            if (!state.voiceColors[voice]) {
+                const assignedCount = Object.keys(state.voiceColors).length;
+                state.voiceColors[voice] = colorPalette[assignedCount % colorPalette.length];
+            }
+            return state.voiceColors[voice];
+        }
+
+        async function init() {
+            try {
+                await store.init();
+                const data = await store.getAll();
+                
+                state.allInsights = data;
+                state.filteredInsights = [...data];
+                
+                if (CONFIG && CONFIG.VOICES) {
+                    assignVoiceColors(CONFIG.VOICES);
+                }
+                
+                initFilters();
+                updateStats();
+                updateAllVoicesIndicator();
+                renderView();
+                
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('contentArea').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                document.getElementById('loadingState').innerHTML = `
+                    <div class="text-center">
+                        <p class="text-red-400 text-lg">Error loading data</p>
+                        <p class="text-zinc-500 text-sm mt-2">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function initFilters() {
+            // Sidebar Voice Filters - ALPHABETICALLY SORTED
+            const voiceFiltersDiv = document.getElementById('voiceFilters');
+            if (CONFIG && CONFIG.VOICES) {
+                // Sort voices alphabetically
+                const sortedVoices = [...CONFIG.VOICES].sort((a, b) => a.localeCompare(b));
+                
+                sortedVoices.forEach(voice => {
+                    const colors = getVoiceColor(voice);
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center space-x-2 group cursor-pointer';
+                    div.setAttribute('data-voice', voice); 
+                    div.innerHTML = `
+                        <input type="checkbox" id="voice-${voice}" class="hidden" />
+                        <div class="w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all"></div>
+                        <label class="text-sm ${colors.text} cursor-pointer flex-1 select-none">${voice}</label>
+                    `;
+                    div.addEventListener('click', () => toggleVoiceFilter(voice, div));
+                    voiceFiltersDiv.appendChild(div);
+                });
+            }
+
+            // Tag Filters
+            const tagFiltersDiv = document.getElementById('tagFilters');
+            if (CONFIG && CONFIG.TAGS) {
+                CONFIG.TAGS.forEach(tag => {
+                    const pill = document.createElement('button');
+                    pill.className = 'tag-pill px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-xs font-medium hover:bg-zinc-700 transition-all';
+                    pill.textContent = tag;
+                    pill.addEventListener('click', () => toggleTagFilter(tag, pill));
+                    tagFiltersDiv.appendChild(pill);
+                });
+            }
+
+            // Other listeners
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                state.searchQuery = e.target.value.toLowerCase();
+                applyFilters();
+            });           
+
+            document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
+        }
+
+        function updateAllVoicesIndicator() {
+            const indicator = document.getElementById('allVoicesIndicator');
+            const svg = indicator.querySelector('svg');
+            const text = indicator.querySelector('span');
+            
+            if (state.selectedVoices.size === 0) {
+                // Active state - green/emerald
+                indicator.className = 'mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg transition-all';
+                svg.className = 'w-4 h-4 text-emerald-400 transition-colors';
+                text.className = 'text-xs font-medium text-emerald-400 transition-colors';
+            } else {
+                // Inactive state - gray/muted
+                indicator.className = 'mb-3 px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-lg transition-all';
+                svg.className = 'w-4 h-4 text-zinc-600 transition-colors';
+                text.className = 'text-xs font-medium text-zinc-600 transition-colors';
+            }
+        }
+
+        function syncSidebarCheckboxes() {
+            const voiceElements = document.getElementById('voiceFilters').children;
+            for (let div of voiceElements) {
+                const voice = div.getAttribute('data-voice');
+                const colors = getVoiceColor(voice);
+                const checkbox = div.querySelector('input');
+                const indicator = div.querySelector('div');
+                
+                if (state.selectedVoices.has(voice)) {
+                    checkbox.checked = true;
+                    indicator.className = `w-4 h-4 rounded border-2 ${colors.border} flex items-center justify-center`;
+                    indicator.style.backgroundColor = colors.accent;
+                    indicator.style.borderColor = colors.accent;
+                    indicator.innerHTML = `<svg class="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
+                } else {
+                    checkbox.checked = false;
+                    indicator.className = `w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all`;
+                    indicator.style.backgroundColor = '';
+                    indicator.style.borderColor = '';
+                    indicator.innerHTML = '';
+                }
+            }
+        }
+
+        function toggleVoiceFilter(voice, element) {
+            if (state.selectedVoices.has(voice)) {
+                state.selectedVoices.delete(voice);
+            } else {
+                state.selectedVoices.add(voice);
+            }
+            syncSidebarCheckboxes();
+            updateAllVoicesIndicator();
+            applyFilters();
+        }
+
+        function toggleTagFilter(tag, element) {
+            if (state.selectedTags.has(tag)) {
+                state.selectedTags.delete(tag);
+                element.classList.remove('bg-purple-600', 'text-white');
+                element.classList.add('bg-zinc-800', 'text-zinc-400');
+            } else {
+                state.selectedTags.add(tag);
+                element.classList.remove('bg-zinc-800', 'text-zinc-400');
+                element.classList.add('bg-purple-600', 'text-white');
+            }
+            applyFilters();
+        }
+
+        function clearAllFilters() {
+            state.selectedVoices.clear();
+            state.selectedTags.clear();
+            state.searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            
+            syncSidebarCheckboxes();
+            updateAllVoicesIndicator();
+            
+            document.querySelectorAll('#tagFilters button').forEach(btn => {
+                btn.classList.remove('bg-purple-600', 'text-white');
+                btn.classList.add('bg-zinc-800', 'text-zinc-400');
+            });
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let filtered = [...state.allInsights];
+            
+            if (state.selectedVoices.size > 0) {
+                filtered = filtered.filter(insight => state.selectedVoices.has(insight.voice));
+            }
+            
+            if (state.selectedTags.size > 0) {
+                filtered = filtered.filter(insight => 
+                    insight.tags && insight.tags.some(tag => state.selectedTags.has(tag))
+                );
+            }
+            
+            if (state.searchQuery) {
+                filtered = filtered.filter(insight => {
+                    const searchableText = `${insight.title} ${insight.text} ${insight.voice}`.toLowerCase();
+                    return searchableText.includes(state.searchQuery);
+                });
+            }
+            
+            filtered.sort((a, b) => {
+                switch (state.sortBy) {
+                    case 'recent': return new Date(b.created_at) - new Date(a.created_at);
+                    case 'oldest': return new Date(a.created_at) - new Date(b.created_at);
+                    case 'voice': return a.voice.localeCompare(b.voice);
+                    case 'title': return a.title.localeCompare(b.title);
+                    default: return 0;
+                }
+            });
+            
+            state.filteredInsights = filtered;
+            renderView();
+        }
+
+        function updateStats() {
+            document.getElementById('insightCount').textContent = 
+                `${state.filteredInsights.length} insight${state.filteredInsights.length !== 1 ? 's' : ''}`;
+            const uniqueVoices = new Set(state.filteredInsights.map(i => i.voice));
+            document.getElementById('voiceCount').textContent = 
+                `${uniqueVoices.size} voice${uniqueVoices.size !== 1 ? 's' : ''}`;
+        }
+
+        function renderView() {
+            updateStats();
+            const contentArea = document.getElementById('contentArea');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (state.filteredInsights.length === 0) {
+                contentArea.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            contentArea.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            
+            renderByVoice();
+        }
+
+        function renderByVoice() {
+            const contentArea = document.getElementById('contentArea');
+            const byVoice = {};
+            state.filteredInsights.forEach(insight => {
+                if (!byVoice[insight.voice]) byVoice[insight.voice] = [];
+                byVoice[insight.voice].push(insight);
+            });
+            
+            let html = '<div class="space-y-8">';
+            Object.entries(byVoice).forEach(([voice, insights]) => {
+                const colors = getVoiceColor(voice);
+                html += `
+                    <div class="voice-lane">
+                        <div class="flex items-center mb-4">
+                            <div class="w-1 h-8 ${colors.bg} ${colors.border} border-l-4 rounded mr-3"></div>
+                            <h3 class="text-xl font-bold ${colors.text}">${voice}</h3>
+                            <span class="ml-3 text-sm text-zinc-500">${insights.length} insight${insights.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-6">
+                `;
+                insights.forEach(insight => {
+                    html += createInsightCard(insight, colors);
+                });
+                html += `</div></div>`;
+            });
+            html += '</div>';
+            contentArea.innerHTML = html;
+            attachCardListeners();
+        }
+
+        function createInsightCard(insight, colors) {
+            const date = new Date(insight.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const tags = insight.tags && insight.tags.length > 0 
+                ? insight.tags.map(tag => `<span class="px-2 py-1 bg-zinc-800 text-zinc-400 rounded text-xs">${tag}</span>`).join('')
+                : '';
+            
+            return `
+                <div class="insight-card ${colors.bg} border ${colors.border} rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all" data-insight='${JSON.stringify(insight).replace(/'/g, "&#39;")}' style="border-width: 2px;">
+                    <div class="flex items-start justify-between mb-2">
+                        <span class="text-xs ${colors.text} font-semibold">${insight.voice}</span>
+                        <span class="text-xs text-zinc-500">${date}</span>
+                    </div>
+                    <h4 class="text-sm font-semibold text-zinc-200 mb-2 line-clamp-2">${insight.title}</h4>
+                    <p class="text-xs text-zinc-400 line-clamp-3 mb-3">${insight.text}</p>
+                    <div class="flex flex-wrap gap-1">${tags}</div>
+                </div>
+            `;
+        }
+
+        function attachCardListeners() {
+            document.querySelectorAll('.insight-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const insight = JSON.parse(card.dataset.insight);
+                    showDetail(insight);
+                });
+            });
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function showDetail(insight) {
+            state.selectedInsight = insight;
+            const panel = document.getElementById('detailPanel');
+            const content = document.getElementById('detailContent');
+            
+            const colors = getVoiceColor(insight.voice);
+            const date = new Date(insight.created_at).toLocaleDateString('en-US', { 
+                month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
+            });
+            const tags = insight.tags && insight.tags.length > 0
+                ? insight.tags.map(tag => `<span class="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full text-sm">${tag}</span>`).join('')
+                : '<span class="text-zinc-500 text-sm italic">No tags</span>';
+            
+            const connectedVoices = new Set();
+            if (insight.tags) {
+                state.allInsights.forEach(i => {
+                    if (i.voice !== insight.voice && i.tags && i.tags.some(t => insight.tags.includes(t))) {
+                        connectedVoices.add(i.voice);
+                    }
+                });
+            }
+
+            const dropdownOptions = Array.from(connectedVoices)
+                .map(v => `<option value="${v}">${v}</option>`)
+                .join('');
+
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <div>
+                        <button onclick="closeDetail()" class="text-zinc-400 hover:text-zinc-200 transition-all mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                        <div class="flex items-center mb-2">
+                            <div class="w-1 h-8 ${colors.bg} ${colors.border} border-l-4 rounded mr-3"></div>
+                            <h3 class="text-xl font-bold ${colors.text}">${insight.voice}</h3>
+                        </div>
+                        <p class="text-xs text-zinc-500 ml-6">${date}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-2xl font-bold text-zinc-100 mb-4">${insight.title}</h4>
+                        <div class="prose prose-invert prose-sm max-w-none">
+                            <p class="text-zinc-300 leading-relaxed">${insight.text}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="text-sm font-semibold text-zinc-400 mb-2">Topics</h5>
+                        <div class="flex flex-wrap gap-2">${tags}</div>
+                    </div>
+                    
+                    <div class="border-t border-zinc-800 pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h5 class="text-sm font-semibold text-zinc-400">Related Insights</h5>
+                            <select id="relatedVoiceFilter" class="bg-zinc-800 text-xs text-zinc-300 rounded px-2 py-1 border border-zinc-700 outline-none focus:border-purple-500 cursor-pointer">
+                                <option value="">Surprise Me (Shuffle)</option>
+                                ${dropdownOptions}
+                            </select>
+                        </div>
+                        <div id="relatedInsights" class="space-y-2">
+                            <p class="text-xs text-zinc-500 italic">Loading related insights...</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            panel.classList.remove('hidden');
+            
+            document.getElementById('relatedVoiceFilter').addEventListener('change', (e) => {
+                loadRelatedInsights(insight, e.target.value);
+            });
+
+            loadRelatedInsights(insight);
+        }
+
+        function closeDetail() {
+            document.getElementById('detailPanel').classList.add('hidden');
+            state.selectedInsight = null;
+        }
+        window.closeDetail = closeDetail;
+
+        function loadRelatedInsights(insight, filterVoice = null) {
+            const container = document.getElementById('relatedInsights');
+            
+            let candidates = state.allInsights.filter(i => {
+                if (i === insight) return false;
+                if (filterVoice && i.voice !== filterVoice) return false;
+                
+                const sameVoice = i.voice === insight.voice;
+                const hasTagOverlap = i.tags && insight.tags && i.tags.some(tag => insight.tags.includes(tag));
+                
+                if (filterVoice) {
+                    return hasTagOverlap;
+                }
+
+                return sameVoice || hasTagOverlap;
+            });
+
+            if (candidates.length === 0) {
+                container.innerHTML = '<p class="text-xs text-zinc-500 italic">No related insights found</p>';
+                return;
+            }
+
+            shuffleArray(candidates);
+            const related = candidates.slice(0, 5);
+            
+            container.innerHTML = related.map(r => {
+                const colors = getVoiceColor(r.voice);
+                return `
+                    <div class="p-3 bg-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-750 transition-all border border-transparent hover:border-zinc-600" onclick='showDetail(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs ${colors.text} font-semibold">${r.voice}</span>
+                        </div>
+                        <p class="text-sm text-zinc-300 line-clamp-2">${r.title}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+        window.showDetail = showDetail;
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
 </body>
 </html>
