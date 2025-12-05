@@ -5,936 +5,177 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cross Perspectives</title>
     <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --bg: #0f172a;
-            --bg-alt: #020617;
-            --panel: #020617;
-            --panel-alt: #020617;
-            --panel-soft: #020617;
-            --card: #020617;
-            --card-soft: #020617;
-            --border-subtle: rgba(148, 163, 184, 0.25);
-            --border-strong: rgba(148, 163, 184, 0.5);
-            --accent: #38bdf8;
-            --accent-soft: rgba(56, 189, 248, 0.12);
-            --accent-strong: rgba(56, 189, 248, 0.28);
-            --accent-muted: rgba(56, 189, 248, 0.65);
-            --accent-secondary: #a855f7;
-            --text: #e5e7eb;
-            --text-soft: #9ca3af;
-            --text-softer: #6b7280;
-            --danger: #f97373;
-            --tag-bg: rgba(15, 23, 42, 0.9);
-            --chip-bg: rgba(15, 23, 42, 0.9);
-            --chip-border: rgba(148, 163, 184, 0.4);
-            --chip-active-bg: rgba(56, 189, 248, 0.12);
-            --chip-active-border: #38bdf8;
-            --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.9);
-            --shadow-card: 0 16px 38px rgba(15, 23, 42, 0.9);
-            --radius-lg: 18px;
-            --radius-xl: 22px;
-            --radius-full: 999px;
-        }
-
-        * {
-            box-sizing: border-box;
+            --chip-bg: rgba(15,23,42,0.9);
+            --chip-border: rgba(148,163,184,0.5);
+            --chip-border-soft: rgba(148,163,184,0.35);
         }
 
         body {
-            margin: 0;
-            min-height: 100vh;
-            background: radial-gradient(circle at top, #0b1120 0, #020617 45%, #000 100%);
-            color: var(--text);
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-            -webkit-font-smoothing: antialiased;
+            @apply bg-slate-950 text-slate-100;
         }
 
-        .app {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+        .scroll-thin {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148,163,184,0.6) transparent;
         }
 
-        header.app-header {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            backdrop-filter: blur(26px);
-            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.88));
-            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-            padding: 1rem 1.25rem 0.85rem;
-        }
-
-        .header-inner {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1.25rem;
-        }
-
-        .header-title-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-        }
-
-        .app-title-row {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .app-pill {
-            padding: 0.16rem 0.6rem 0.18rem;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            font-size: 0.7rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-soft);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), rgba(15, 23, 42, 0.9));
-        }
-
-        .app-pill-dot {
-            display: inline-block;
+        .scroll-thin::-webkit-scrollbar {
             width: 6px;
-            height: 6px;
-            border-radius: 999px;
-            background: var(--accent);
-            box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
         }
 
-        h1.app-title {
-            margin: 0;
-            font-size: 1.28rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            display: flex;
-            align-items: baseline;
-            gap: 0.55rem;
+        .scroll-thin::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .app-title span.highlight {
-            background: linear-gradient(120deg, #38bdf8, #a855f7, #22c55e);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .app-subtitle {
-            margin: 0;
-            font-size: 0.85rem;
-            color: var(--text-soft);
-        }
-
-        .header-stats {
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-            font-size: 0.78rem;
-            color: var(--text-soft);
-        }
-
-        .header-stat-pill {
-            padding: 0.4rem 0.6rem;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.5);
-            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.95));
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.75);
-        }
-
-        .header-stat-pill strong {
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .header-stat-label {
-            color: var(--text-soft);
-        }
-
-        .header-active-filters {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            padding: 0.18rem 0.5rem;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            white-space: nowrap;
-            max-width: 260px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .header-active-filters span {
-            font-size: 0.72rem;
-        }
-
-        main.layout {
-            flex: 1;
-            max-width: 1400px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 1.1rem 1.25rem 1.4rem;
-            display: grid;
-            grid-template-columns: minmax(260px, 300px) minmax(0, 1.1fr) minmax(0, 1.5fr);
-            gap: 1rem;
-        }
-
-        aside.sidebar {
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 1), rgba(2, 6, 23, 0.98));
-            border-radius: var(--radius-xl);
-            padding: 0.75rem 0.8rem 0.9rem;
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            box-shadow: var(--shadow-soft);
-            display: flex;
-            flex-direction: column;
-            gap: 0.7rem;
-        }
-
-        .sidebar-section {
-            padding: 0.35rem 0.4rem 0.45rem;
-            border-radius: 16px;
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.98));
-            border: 1px solid rgba(30, 64, 175, 0.6);
-        }
-
-        .sidebar-section + .sidebar-section {
-            margin-top: 0.35rem;
-        }
-
-        .sidebar-heading {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            margin-bottom: 0.3rem;
-        }
-
-        .sidebar-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--text-softer);
-        }
-
-        .sidebar-heading-badge {
-            font-size: 0.7rem;
-            padding: 0.08rem 0.45rem;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.35);
-            color: var(--text-softer);
-        }
-
-        .search-row {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            margin-bottom: 0.35rem;
-        }
-
-        .search-input-wrap {
-            position: relative;
-            flex: 1;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 0.45rem 0.75rem 0.47rem 1.8rem;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.5);
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 1));
-            color: var(--text);
-            font-size: 0.82rem;
-            outline: none;
-        }
-
-        .search-input::placeholder {
-            color: var(--text-softer);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 0.68rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.9rem;
-            color: var(--text-softer);
-        }
-
-        .clear-btn {
-            border: 1px solid rgba(148, 163, 184, 0.45);
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 1));
-            color: var(--text-soft);
-            border-radius: 999px;
-            padding: 0.38rem 0.7rem;
-            font-size: 0.74rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.28rem;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .clear-btn:hover {
-            border-color: rgba(248, 250, 252, 0.8);
-            color: #e5e7eb;
-        }
-
-        .sort-row {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            margin-top: 0.2rem;
-        }
-
-        .sort-row label {
-            font-size: 0.75rem;
-            color: var(--text-softer);
-        }
-
-        .sort-select {
-            flex: 1;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.45);
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 1));
-            color: var(--text-soft);
-            font-size: 0.78rem;
-            padding: 0.35rem 0.7rem 0.35rem 0.7rem;
-            outline: none;
-        }
-
-        .chip-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-        }
-
-        .chip-scroll {
-            max-height: 160px;
-            overflow: auto;
-            padding-right: 0.1rem;
+        .scroll-thin::-webkit-scrollbar-thumb {
+            background-color: rgba(148,163,184,0.6);
+            border-radius: 9999px;
         }
 
         .chip {
-            border-radius: 999px;
-            border: 1px solid var(--chip-border);
-            padding: 0.26rem 0.7rem 0.28rem;
-            font-size: 0.74rem;
-            color: var(--text-soft);
-            background: var(--chip-bg);
-            cursor: pointer;
-            white-space: nowrap;
+            background-color: var(--chip-bg);
+            border-radius: 9999px;
+            border: 1px solid var(--chip-border-soft);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.7rem;
             display: inline-flex;
             align-items: center;
             gap: 0.4rem;
-            transition: border-color 0.1s ease, background 0.1s ease, color 0.1s ease, transform 0.05s ease;
+            color: rgb(148,163,184);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
         }
 
         .chip:hover {
-            border-color: var(--accent-muted);
-            color: #e5e7eb;
-        }
-
-        .chip--active {
-            background: var(--chip-active-bg);
-            border-color: var(--chip-active-border);
-            color: #e5e7eb;
-            box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.3);
+            border-color: rgba(148,163,184,0.8);
+            color: rgb(226,232,240);
         }
 
         .chip-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.85);
-        }
-
-        .chip--active .chip-dot {
-            background: var(--accent);
+            width: 7px;
+            height: 7px;
+            border-radius: 9999px;
+            background-color: rgba(148,163,184,0.9);
         }
 
         .chip-label-main {
-            max-width: 130px;
+            max-width: 140px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .chip-label-count {
-            font-size: 0.72rem;
-            color: var(--text-softer);
-        }
-
-        .sidebar-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.3rem;
-        }
-
-        .stat-card {
-            padding: 0.4rem 0.4rem 0.45rem;
-            border-radius: 14px;
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.94));
-            border: 1px solid rgba(15, 23, 42, 1);
-            text-align: left;
-        }
-
-        .stat-label {
-            display: block;
-            font-size: 0.68rem;
-            color: var(--text-softer);
-            margin-bottom: 0.05rem;
-        }
-
-        .stat-value {
-            display: flex;
-            align-items: baseline;
-            gap: 0.25rem;
-        }
-
-        .stat-value-main {
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .stat-value-sub {
             font-size: 0.7rem;
-            color: var(--text-softer);
+            color: rgb(148,163,184);
         }
 
-        .stat-secondary-row {
-            margin-top: 0.25rem;
-            font-size: 0.68rem;
-            color: var(--text-softer);
+        .voice-chip {
+            border-color: var(--chip-border-soft);
         }
 
-        .list-panel {
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
-            border-radius: var(--radius-xl);
-            border: 1px solid rgba(30, 64, 175, 0.7);
-            box-shadow: var(--shadow-card);
-            padding: 0.6rem 0.6rem 0.7rem;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
+        .voice-chip--active {
+            border-color: var(--voice-color, rgb(56,189,248));
+            box-shadow: 0 0 0 1px rgba(15,23,42,1);
+            background-color: rgba(15,23,42,0.9);
+            color: rgb(226,232,240);
         }
 
-        .list-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            margin-bottom: 0.45rem;
+        .voice-chip--active .chip-dot {
+            background-color: var(--voice-color, rgb(56,189,248));
         }
 
-        .list-title {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.14em;
-            color: var(--text-softer);
-        }
-
-        .list-subtitle {
-            font-size: 0.72rem;
-            color: var(--text-softer);
-        }
-
-        .list-header-right {
-            font-size: 0.72rem;
-            color: var(--text-softer);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .list-counter-pill {
-            padding: 0.16rem 0.5rem;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.4);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.16rem;
-        }
-
-        .list-counter-pill strong {
-            color: #e5e7eb;
-        }
-
-        .insight-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            flex: 1;
-            overflow: auto;
-            border-radius: 18px;
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.98));
-            border: 1px solid rgba(15, 23, 42, 1);
-        }
-
-        .insight-empty {
-            padding: 1.2rem 1rem;
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--text-soft);
-        }
-
-        .insight-card {
-            padding: 0.7rem 0.8rem 0.72rem;
-            border-bottom: 1px solid rgba(15, 23, 42, 1);
-            cursor: pointer;
-            background: transparent;
-            transition: background 0.08s ease, transform 0.04s ease, box-shadow 0.08s ease;
-        }
-
-        .insight-card:last-child {
-            border-bottom: none;
-        }
-
-        .insight-card:hover {
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.9));
-        }
-
-        .insight-card--selected {
-            background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 1));
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.8);
-        }
-
-        .insight-card__title {
-            font-size: 0.9rem;
-            margin: 0 0 0.15rem;
-            font-weight: 600;
-            color: #e5e7eb;
-        }
-
-        .insight-card__meta {
-            font-size: 0.72rem;
-            color: var(--text-softer);
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            margin-bottom: 0.28rem;
-        }
-
-        .meta-dot {
-            width: 3px;
-            height: 3px;
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.7);
-        }
-
-        .insight-card__text {
-            font-size: 0.78rem;
-            color: var(--text-soft);
-            margin: 0 0 0.3rem;
-        }
-
-        .insight-card__tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.3rem;
-        }
-
-        .tag {
-            font-size: 0.68rem;
-            padding: 0.14rem 0.5rem 0.16rem;
-            border-radius: 999px;
-            background: var(--tag-bg);
-            border: 1px solid rgba(148, 163, 184, 0.4);
-            color: var(--text-softer);
-        }
-
-        .detail-panel {
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.99), rgba(15, 23, 42, 0.97));
-            border-radius: var(--radius-xl);
-            border: 1px solid rgba(129, 140, 248, 0.65);
-            box-shadow: var(--shadow-card);
-            padding: 0.7rem 0.75rem 0.85rem;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-
-        .detail-header {
-            margin-bottom: 0.45rem;
-        }
-
-        .detail-section-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.14em;
-            color: var(--text-softer);
-            margin-bottom: 0.15rem;
-        }
-
-        .detail-title {
-            font-size: 1rem;
-            margin: 0 0 0.22rem;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-        }
-
-        .detail-meta-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            margin-bottom: 0.35rem;
-        }
-
-        .detail-meta-main {
-            font-size: 0.8rem;
-            color: var(--text-soft);
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-        }
-
-        .detail-meta-main strong {
-            color: #e5e7eb;
-        }
-
-        .detail-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .detail-pill-btn {
-            font-size: 0.72rem;
-            padding: 0.18rem 0.55rem;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.45);
-            background: rgba(15, 23, 42, 0.98);
-            color: var(--text-soft);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.26rem;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .detail-pill-btn span.dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 999px;
-            background: var(--accent);
-        }
-
-        .detail-pill-btn:hover {
-            border-color: rgba(248, 250, 252, 0.9);
-            color: #e5e7eb;
-        }
-
-        .detail-tags-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.3rem;
-            margin-bottom: 0.35rem;
-        }
-
-        .detail-tag-link {
-            font-size: 0.7rem;
-            padding: 0.18rem 0.6rem 0.2rem;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.45);
-            background: rgba(15, 23, 42, 0.96);
-            color: var(--text-softer);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .detail-tag-link:hover {
-            border-color: var(--accent);
-            color: #e5e7eb;
-        }
-
-        .detail-tag-link span.dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 999px;
-            background: rgba(129, 140, 248, 0.9);
-        }
-
-        .detail-main-layout {
-            flex: 1;
-            display: grid;
-            grid-template-columns: minmax(0, 2.1fr) minmax(260px, 1.4fr);
-            gap: 0.9rem;
-            min-height: 0;
+        .tag-chip--active {
+            border-color: rgb(56,189,248);
+            background-color: rgba(8,47,73,0.8);
+            color: rgb(226,232,240);
         }
 
         .detail-body {
-            border-radius: 18px;
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.98));
-            border: 1px solid rgba(15, 23, 42, 1);
-            font-size: 0.86rem;
-            line-height: 1.6;
-            color: var(--text);
             white-space: pre-wrap;
-            padding: 0.6rem 0.7rem 0.8rem;
-            overflow: auto;
-            min-height: 0;
         }
 
-        .detail-empty {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--text-soft);
-            padding: 1.3rem 0.7rem;
+        .all-voices-indicator {
+            transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
         }
 
-        .related-section {
-            border-radius: 18px;
-            background: radial-gradient(circle at top left, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.98));
-            border: 1px solid rgba(15, 23, 42, 1);
-            padding: 0.55rem 0.6rem 0.7rem;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
+        .all-voices-indicator.active {
+            background-color: rgba(16,185,129,0.12);
+            border-color: rgb(16,185,129);
+            color: rgb(209,250,229);
         }
 
-        .related-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            margin-bottom: 0.1rem;
-        }
-
-        .related-title {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--text-softer);
-        }
-
-        .related-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 0.25rem;
-            overflow: auto;
-        }
-
-        .related-item {
-            font-size: 0.78rem;
-            padding: 0.32rem 0.5rem 0.34rem;
-            border-radius: 999px;
-            background: rgba(15, 23, 42, 0.96);
-            border: 1px solid rgba(148, 163, 184, 0.4);
-            color: var(--text-soft);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.4rem;
-            cursor: pointer;
-        }
-
-        .related-item:hover {
-            border-color: var(--accent);
-            color: #e5e7eb;
-        }
-
-        .related-main {
-            display: flex;
-            flex-direction: column;
-            gap: 0.02rem;
-        }
-
-        .related-title-text {
-            max-width: 220px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .related-meta {
-            font-size: 0.7rem;
-            color: var(--text-softer);
-        }
-
-        .related-pill {
-            font-size: 0.68rem;
-            padding: 0.12rem 0.35rem;
-            border-radius: 999px;
-            border: 1px solid rgba(56, 189, 248, 0.6);
-            color: var(--accent-muted);
-            background: rgba(8, 47, 73, 0.4);
-            white-space: nowrap;
-        }
-
-        @media (max-width: 1200px) {
-            main.layout {
-                grid-template-columns: minmax(250px, 280px) minmax(0, 1fr) minmax(0, 1.2fr);
-            }
-        }
-
-        @media (max-width: 1100px) {
-            main.layout {
-                grid-template-columns: minmax(230px, 260px) minmax(0, 1fr);
-                grid-template-rows: auto minmax(0, 1fr);
-                grid-template-areas:
-                    "sidebar sidebar"
-                    "list detail";
-            }
-
-            aside.sidebar {
-                grid-area: sidebar;
-                flex-direction: row;
-                align-items: stretch;
-                gap: 0.7rem;
-            }
-
-            .sidebar-section {
-                flex: 1;
-            }
-
-            .list-panel {
-                grid-area: list;
-            }
-
-            .detail-panel {
-                grid-area: detail;
-            }
-        }
-
-        @media (max-width: 960px) {
-            .detail-main-layout {
-                grid-template-columns: minmax(0, 1fr);
-            }
-        }
-
-        @media (max-width: 860px) {
-            header.app-header {
-                padding: 0.9rem 0.9rem 0.75rem;
-            }
-
-            main.layout {
-                padding: 0.9rem 0.9rem 1.1rem;
-                grid-template-columns: minmax(0, 1fr);
-                grid-template-areas:
-                    "sidebar"
-                    "list"
-                    "detail";
-            }
-
-            aside.sidebar {
-                flex-direction: column;
-            }
-
-            .header-inner {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .header-stats {
-                width: 100%;
-                justify-content: space-between;
-            }
-
-            .detail-panel {
-                margin-top: 0.35rem;
-            }
-        }
-
-        @media (max-width: 540px) {
-            .header-stats {
-                flex-wrap: wrap;
-                gap: 0.35rem;
-            }
-
-            .list-panel {
-                padding: 0.55rem 0.5rem 0.65rem;
-            }
-
-            .detail-panel {
-                padding: 0.55rem 0.55rem 0.8rem;
-            }
+        .all-voices-indicator.inactive {
+            background-color: rgba(30,64,175,0.12);
+            border-color: rgba(148,163,184,0.5);
+            color: rgb(148,163,184);
         }
     </style>
 </head>
-<body>
-<div class="app">
-    <header class="app-header">
-        <div class="header-inner">
-            <div class="header-title-group">
-                <div class="app-title-row">
-                    <div class="app-pill">
-                        <span class="app-pill-dot"></span>
-                        <span>Perspective Explorer</span>
-                    </div>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+<div class="min-h-screen flex flex-col">
+    <header class="sticky top-0 z-20 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+        <div class="mx-auto flex max-w-7xl items-start justify-between gap-4 px-4 py-3">
+            <div class="space-y-1">
+                <div class="inline-flex items-center gap-2 rounded-full border border-slate-600/70 bg-slate-900 px-2.5 py-0.5 text-[0.7rem] uppercase tracking-[0.16em] text-slate-300">
+                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]"></span>
+                    <span>Perspective Explorer</span>
                 </div>
-                <h1 class="app-title">
-                    <span class="highlight">Cross Perspectives</span>
-                    <span>· theological insight atlas</span>
-                </h1>
-                <p class="app-subtitle">
+                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <h1 class="text-base font-semibold tracking-wide">
+                        <span class="bg-gradient-to-r from-sky-400 via-fuchsia-400 to-emerald-400 bg-clip-text text-transparent">Cross Perspectives</span>
+                    </h1>
+                    <span class="text-[0.8rem] text-slate-400">· theological insight atlas</span>
+                </div>
+                <p class="max-w-xl text-[0.85rem] text-slate-400">
                     Browse voices, follow themes, and read the cross from many angles in a single, woven view.
                 </p>
             </div>
-            <div class="header-stats">
-                <div class="header-stat-pill">
-                    <span class="header-stat-label">Insights</span>
-                    <strong id="statsTotal">–</strong>
+            <div class="hidden items-center gap-3 text-[0.75rem] text-slate-300 sm:flex">
+                <div class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 shadow-sm">
+                    <span class="text-slate-400">Insights</span>
+                    <span id="statsTotal" class="font-semibold text-sky-400">–</span>
                 </div>
-                <div class="header-stat-pill">
-                    <span class="header-stat-label">Voices</span>
-                    <strong id="statsVoices">–</strong>
+                <div class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 shadow-sm">
+                    <span class="text-slate-400">Voices</span>
+                    <span id="statsVoices" class="font-semibold text-sky-400">–</span>
                 </div>
-                <div class="header-stat-pill">
-                    <span class="header-stat-label">Topics</span>
-                    <strong id="statsTags">–</strong>
-                </div>
-                <div class="header-active-filters">
-                    <span>Now viewing:</span>
-                    <span id="activeFiltersSummary">All voices · All topics</span>
+                <div class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 shadow-sm">
+                    <span class="text-slate-400">Topics</span>
+                    <span id="statsTags" class="font-semibold text-sky-400">–</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <main class="layout">
-        <aside class="sidebar">
-            <section class="sidebar-section">
-                <div class="sidebar-heading">
-                    <div>
-                        <div class="sidebar-title">Search &amp; Sort</div>
-                    </div>
-                    <div class="sidebar-heading-badge">Reader controls</div>
+    <main class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-4 py-4 lg:grid lg:grid-cols-[270px,minmax(0,1.1fr),minmax(0,1.6fr)]">
+        <!-- Sidebar -->
+        <aside class="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/80 p-3 shadow-lg shadow-slate-950/60 lg:row-span-2">
+            <!-- Search & sort -->
+            <section class="rounded-xl border border-slate-800 bg-slate-900/80 p-3 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="text-[0.7rem] uppercase tracking-[0.18em] text-slate-400">Search &amp; Sort</div>
+                    <span class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-[0.7rem] text-slate-400">Reader controls</span>
                 </div>
-                <div class="search-row">
-                    <div class="search-input-wrap">
-                        <span class="search-icon">🔍</span>
-                        <input id="searchInput" class="search-input" placeholder="Search title, text, or voice">
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <span class="pointer-events-none absolute inset-y-0 left-2 flex items-center text-xs text-slate-500">🔍</span>
+                        <input id="searchInput" type="text" placeholder="Search title, text, or voice"
+                               class="w-full rounded-full border border-slate-700 bg-slate-950 px-7 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-500/60">
                     </div>
-                    <button id="clearFilters" class="clear-btn" type="button">
-                        ✕ Clear
+                    <button id="clearFilters" type="button"
+                            class="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-950 px-2 py-1 text-[0.7rem] text-slate-300 hover:border-slate-200 hover:text-slate-50">
+                        <span>✕</span>
+                        <span>Clear</span>
                     </button>
                 </div>
-                <div class="sort-row">
-                    <label for="sortSelect">Order</label>
-                    <select id="sortSelect" class="sort-select">
+                <div class="flex items-center gap-2">
+                    <label for="sortSelect" class="text-[0.7rem] text-slate-400">Order</label>
+                    <select id="sortSelect"
+                            class="flex-1 rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-100 focus:border-sky-400 focus:outline-none focus:ring-1 focus:ring-sky-500/60">
                         <option value="newest">Newest first</option>
                         <option value="oldest">Oldest first</option>
                         <option value="title">By title</option>
@@ -943,111 +184,114 @@
                 </div>
             </section>
 
-            <section class="sidebar-section">
-                <div class="sidebar-heading">
-                    <div>
-                        <div class="sidebar-title">Voices</div>
-                    </div>
-                    <div class="sidebar-heading-badge">Click to focus</div>
+            <!-- Voices -->
+            <section class="space-y-2 rounded-xl border border-slate-800 bg-slate-900/80 p-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="text-[0.7rem] uppercase tracking-[0.18em] text-slate-400">Voices</div>
+                    <span class="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[0.7rem] text-slate-400">Click to focus</span>
                 </div>
-                <div id="voiceChips" class="chip-group chip-scroll"></div>
+
+                <div id="allVoicesIndicator"
+                     class="all-voices-indicator active mb-2 inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[0.7rem]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293A1 1 0 006.293 10.707l2 2a1 1 0 001.414 0l4-4z"
+                              clip-rule="evenodd"/>
+                    </svg>
+                    <span>Viewing all voices</span>
+                </div>
+
+                <div id="voiceChips" class="scroll-thin flex max-h-40 flex-wrap gap-2 overflow-y-auto"></div>
             </section>
 
-            <section class="sidebar-section">
-                <div class="sidebar-heading">
-                    <div>
-                        <div class="sidebar-title">Topics</div>
-                    </div>
-                    <div class="sidebar-heading-badge">Mix &amp; match</div>
+            <!-- Topics -->
+            <section class="space-y-2 rounded-xl border border-slate-800 bg-slate-900/80 p-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="text-[0.7rem] uppercase tracking-[0.18em] text-slate-400">Topics</div>
+                    <span class="rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[0.7rem] text-slate-400">Mix &amp; match</span>
                 </div>
-                <div id="tagChips" class="chip-group chip-scroll"></div>
+                <div id="tagChips" class="scroll-thin flex max-h-40 flex-wrap gap-2 overflow-y-auto"></div>
             </section>
 
-            <section class="sidebar-section">
-                <div class="sidebar-heading">
-                    <div class="sidebar-title">Collection glance</div>
-                </div>
-                <div class="sidebar-stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-label">Visible</span>
-                        <div class="stat-value">
-                            <span id="statsVisible" class="stat-value-main">–</span>
-                            <span class="stat-value-sub">now</span>
-                        </div>
-                        <div class="stat-secondary-row">
-                            Filtered by your current view.
+            <!-- Collection glance -->
+            <section class="space-y-2 rounded-xl border border-slate-800 bg-slate-900/80 p-3">
+                <div class="text-[0.7rem] uppercase tracking-[0.18em] text-slate-400">Collection glance</div>
+                <div class="grid grid-cols-3 gap-2 text-[0.7rem]">
+                    <div class="rounded-lg border border-slate-800 bg-slate-950 p-2">
+                        <div class="text-slate-400">Visible</div>
+                        <div class="flex items-baseline gap-1">
+                            <span id="statsVisible" class="text-sm font-semibold text-sky-400">–</span>
+                            <span class="text-[0.7rem] text-slate-500">now</span>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Voices</span>
-                        <div class="stat-value">
-                            <span id="statsVoicesSmall" class="stat-value-main">–</span>
-                            <span class="stat-value-sub">distinct</span>
-                        </div>
-                        <div class="stat-secondary-row">
-                            Each voice a lens on the cross.
+                    <div class="rounded-lg border border-slate-800 bg-slate-950 p-2">
+                        <div class="text-slate-400">Voices</div>
+                        <div class="flex items-baseline gap-1">
+                            <span id="statsVoicesSmall" class="text-sm font-semibold text-sky-400">–</span>
+                            <span class="text-[0.7rem] text-slate-500">distinct</span>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-label">Topics</span>
-                        <div class="stat-value">
-                            <span id="statsTagsSmall" class="stat-value-main">–</span>
-                            <span class="stat-value-sub">themes</span>
-                        </div>
-                        <div class="stat-secondary-row">
-                            Combine tags to follow threads.
+                    <div class="rounded-lg border border-slate-800 bg-slate-950 p-2">
+                        <div class="text-slate-400">Topics</div>
+                        <div class="flex items-baseline gap-1">
+                            <span id="statsTagsSmall" class="text-sm font-semibold text-sky-400">–</span>
+                            <span class="text-[0.7rem] text-slate-500">themes</span>
                         </div>
                     </div>
                 </div>
             </section>
         </aside>
 
-        <section class="list-panel">
-            <div class="list-header">
+        <!-- List panel -->
+        <section class="flex min-h-[12rem] flex-col rounded-2xl border border-slate-800 bg-slate-950/80 p-3 shadow-lg shadow-slate-950/60">
+            <div class="mb-2 flex items-center justify-between gap-2">
                 <div>
-                    <div class="list-title">Insights</div>
-                    <div class="list-subtitle">Click a card to open the full perspective.</div>
+                    <div class="text-[0.7rem] uppercase tracking-[0.18em] text-slate-400">Insights</div>
+                    <p class="text-[0.75rem] text-slate-400">Click a card to open the full perspective.</p>
                 </div>
-            <div class="list-header-right">
-                    <div class="list-counter-pill">
-                        <span>Showing</span>
-                        <strong id="listCount">–</strong>
-                    </div>
+                <div class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-1 text-[0.7rem] text-slate-300">
+                    <span>Showing</span>
+                    <span id="listCount" class="font-semibold text-slate-50">–</span>
                 </div>
             </div>
-            <ul id="insightList" class="insight-list">
-                <li class="insight-empty">Loading insights…</li>
+            <ul id="insightList"
+                class="scroll-thin mt-1 flex-1 list-none space-y-1 overflow-y-auto rounded-xl border border-slate-900 bg-slate-950/80 p-1 text-sm">
+                <li class="px-3 py-4 text-center text-xs text-slate-400">Loading insights…</li>
             </ul>
         </section>
 
-        <section class="detail-panel">
-            <div id="detailContent" class="detail-empty">
-                Choose a voice and topic on the left, then select an insight card to begin reading.
+        <!-- Detail panel -->
+        <section class="flex min-h-[12rem] flex-col rounded-2xl border border-indigo-700/70 bg-slate-950/80 p-3 shadow-lg shadow-slate-950/60">
+            <div id="detailContent" class="flex flex-1 items-center justify-center px-4 py-6 text-center text-[0.85rem] text-slate-400">
+                Choose a voice or topic on the left, then select an insight to begin reading.
             </div>
         </section>
     </main>
 </div>
 
-<script>
-    class CrossStore {
-        constructor() {
-            this.db = new Dexie("CrossPerspectivesDB");
-            this.db.version(1).stores({
-                insights: '++id, voice, title, *tags, created_at'
-            });
-        }
-        async init() {
-            if (!this.db.isOpen()) await this.db.open();
-        }
-        async getAll() {
-            return await this.db.insights
-                .orderBy('created_at')
-                .reverse()
-                .toArray();
-        }
-    }
+<script src="cp-config.js"></script>
+<script src="cp-store.js"></script>
+<script src="cp-renderers.js"></script>
 
-    const store = new CrossStore();
+<script>
+    const colorPalette = [
+        '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+        '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+    ];
+
+    function getVoiceColor(voice) {
+        const voices = (typeof CONFIG !== 'undefined' && Array.isArray(CONFIG.VOICES)) ? CONFIG.VOICES : [];
+        const index = voices.indexOf(voice);
+        if (index !== -1) {
+            return colorPalette[index % colorPalette.length];
+        }
+        if (!voice) return colorPalette[0];
+        let hash = 0;
+        for (let i = 0; i < voice.length; i++) {
+            hash = (hash + voice.charCodeAt(i)) % colorPalette.length;
+        }
+        return colorPalette[hash];
+    }
 
     let allInsights = [];
     let filteredInsights = [];
@@ -1101,13 +345,27 @@
                 selectedTags.clear();
                 searchQuery = '';
                 sortMode = 'newest';
-                const searchEl = document.getElementById('searchInput');
-                if (searchEl) searchEl.value = '';
-                const sortEl = document.getElementById('sortSelect');
-                if (sortEl) sortEl.value = 'newest';
+                selectedInsightId = null;
+
+                if (searchInput) searchInput.value = '';
+                if (sortSelect) sortSelect.value = 'newest';
+
                 renderFilterChips();
                 applyFilters();
+                renderDetail(null);
             });
+        }
+    }
+
+    function updateAllVoicesIndicator() {
+        const indicator = document.getElementById('allVoicesIndicator');
+        if (!indicator) return;
+        if (selectedVoices.size === 0) {
+            indicator.classList.add('active');
+            indicator.classList.remove('inactive');
+        } else {
+            indicator.classList.remove('active');
+            indicator.classList.add('inactive');
         }
     }
 
@@ -1119,20 +377,31 @@
             voiceContainer.innerHTML = '';
             allVoices.forEach((voice) => {
                 const count = allInsights.filter(i => i.voice === voice).length;
+                const color = getVoiceColor(voice);
+
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'chip' + (selectedVoices.has(voice) ? ' chip--active' : '');
+                btn.className = 'chip voice-chip flex items-center';
+                if (selectedVoices.has(voice)) {
+                    btn.classList.add('voice-chip--active');
+                }
+                btn.style.setProperty('--voice-color', color);
+
                 const dot = document.createElement('span');
                 dot.className = 'chip-dot';
+
                 const label = document.createElement('span');
                 label.className = 'chip-label-main';
                 label.textContent = voice || 'Unknown';
+
                 const countSpan = document.createElement('span');
                 countSpan.className = 'chip-label-count';
                 countSpan.textContent = count;
+
                 btn.appendChild(dot);
                 btn.appendChild(label);
                 btn.appendChild(countSpan);
+
                 btn.addEventListener('click', () => {
                     if (selectedVoices.has(voice)) {
                         selectedVoices.delete(voice);
@@ -1142,6 +411,7 @@
                     renderFilterChips();
                     applyFilters();
                 });
+
                 voiceContainer.appendChild(btn);
             });
         }
@@ -1152,20 +422,29 @@
                 const count = allInsights.filter(i =>
                     Array.isArray(i.tags) && i.tags.includes(tag)
                 ).length;
+
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'chip' + (selectedTags.has(tag) ? ' chip--active' : '');
+                btn.className = 'chip flex items-center';
+                if (selectedTags.has(tag)) {
+                    btn.classList.add('tag-chip--active');
+                }
+
                 const dot = document.createElement('span');
                 dot.className = 'chip-dot';
+
                 const label = document.createElement('span');
                 label.className = 'chip-label-main';
                 label.textContent = tag;
+
                 const countSpan = document.createElement('span');
                 countSpan.className = 'chip-label-count';
                 countSpan.textContent = count;
+
                 btn.appendChild(dot);
                 btn.appendChild(label);
                 btn.appendChild(countSpan);
+
                 btn.addEventListener('click', () => {
                     if (selectedTags.has(tag)) {
                         selectedTags.delete(tag);
@@ -1175,9 +454,12 @@
                     renderFilterChips();
                     applyFilters();
                 });
+
                 tagContainer.appendChild(btn);
             });
         }
+
+        updateAllVoicesIndicator();
     }
 
     function applyFilters() {
@@ -1204,11 +486,7 @@
 
         switch (sortMode) {
             case 'oldest':
-                result.sort((a, b) => {
-                    const da = new Date(a.created_at).getTime();
-                    const db = new Date(b.created_at).getTime();
-                    return da - db;
-                });
+                result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 break;
             case 'title':
                 result.sort((a, b) => {
@@ -1216,9 +494,7 @@
                     const tb = (b.title || '').toLowerCase();
                     if (ta < tb) return -1;
                     if (ta > tb) return 1;
-                    const da = new Date(a.created_at).getTime();
-                    const db = new Date(b.created_at).getTime();
-                    return db - da;
+                    return new Date(b.created_at) - new Date(a.created_at);
                 });
                 break;
             case 'voice':
@@ -1227,32 +503,27 @@
                     const vb = (b.voice || '').toLowerCase();
                     if (va < vb) return -1;
                     if (va > vb) return 1;
-                    const da = new Date(a.created_at).getTime();
-                    const db = new Date(b.created_at).getTime();
-                    return db - da;
+                    return new Date(b.created_at) - new Date(a.created_at);
                 });
                 break;
             case 'newest':
             default:
-                result.sort((a, b) => {
-                    const da = new Date(a.created_at).getTime();
-                    const db = new Date(b.created_at).getTime();
-                    return db - da;
-                });
+                result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                 break;
         }
 
         filteredInsights = result;
         renderList();
         renderStats();
-        if (!selectedInsightId && filteredInsights.length > 0) {
-            selectInsight(filteredInsights[0].id);
-        } else if (selectedInsightId) {
+
+        if (selectedInsightId) {
             const stillVisible = filteredInsights.some(i => i.id === selectedInsightId);
-            if (!stillVisible && filteredInsights.length > 0) {
-                selectInsight(filteredInsights[0].id);
+            if (!stillVisible) {
+                selectedInsightId = null;
+                renderDetail(null);
+            } else {
+                highlightSelectedCard();
             }
-            highlightSelectedCard();
         }
     }
 
@@ -1264,7 +535,6 @@
         const voicesSmallEl = document.getElementById('statsVoicesSmall');
         const tagsSmallEl = document.getElementById('statsTagsSmall');
         const listCountEl = document.getElementById('listCount');
-        const summaryEl = document.getElementById('activeFiltersSummary');
 
         const total = allInsights.length;
         const totalVoices = allVoices.length;
@@ -1278,16 +548,6 @@
         if (voicesSmallEl) voicesSmallEl.textContent = totalVoices || '0';
         if (tagsSmallEl) tagsSmallEl.textContent = totalTags || '0';
         if (listCountEl) listCountEl.textContent = visible || '0';
-
-        if (summaryEl) {
-            const voicePart = selectedVoices.size > 0
-                ? `Voices: ${Array.from(selectedVoices).slice(0, 2).join(', ')}${selectedVoices.size > 2 ? '…' : ''}`
-                : 'All voices';
-            const tagPart = selectedTags.size > 0
-                ? `Topics: ${Array.from(selectedTags).slice(0, 2).join(', ')}${selectedTags.size > 2 ? '…' : ''}`
-                : 'All topics';
-            summaryEl.textContent = `${voicePart} · ${tagPart}`;
-        }
     }
 
     function renderList() {
@@ -1296,37 +556,40 @@
         list.innerHTML = '';
 
         if (!filteredInsights.length) {
-            const empty = document.createElement('li');
-            empty.className = 'insight-empty';
-            empty.textContent = 'No insights match your current filters. Try clearing filters or changing search.';
-            list.appendChild(empty);
-            const detail = document.getElementById('detailContent');
-            if (detail) {
-                detail.innerHTML = '';
-                const emptyDetail = document.createElement('div');
-                emptyDetail.className = 'detail-empty';
-                emptyDetail.textContent = 'No insight selected. Adjust your filters or search to bring perspectives into view.';
-                detail.appendChild(emptyDetail);
-            }
+            const li = document.createElement('li');
+            li.className = 'px-3 py-4 text-center text-xs text-slate-400';
+            li.textContent = 'No insights match your current filters. Try clearing filters or changing search.';
+            list.appendChild(li);
             return;
         }
 
         filteredInsights.forEach((insight) => {
             const li = document.createElement('li');
             const card = document.createElement('article');
-            card.className = 'insight-card';
+            card.className = 'insight-card rounded-xl border border-slate-900 bg-slate-950/80 px-3 py-2.5 text-xs text-slate-200 hover:border-sky-500/80 hover:bg-slate-900/80 cursor-pointer transition';
             card.dataset.id = String(insight.id);
 
+            const titleRow = document.createElement('div');
+            titleRow.className = 'mb-1 flex items-start justify-between gap-2';
+
             const titleEl = document.createElement('h3');
-            titleEl.className = 'insight-card__title';
+            titleEl.className = 'text-[0.85rem] font-semibold text-slate-50';
             titleEl.textContent = insight.title || '(Untitled insight)';
 
+            const voiceColor = getVoiceColor(insight.voice);
+            const voiceDot = document.createElement('span');
+            voiceDot.className = 'mt-1 inline-flex h-2 w-2 flex-shrink-0 rounded-full';
+            voiceDot.style.backgroundColor = voiceColor;
+
+            titleRow.appendChild(titleEl);
+            titleRow.appendChild(voiceDot);
+
             const metaRow = document.createElement('div');
-            metaRow.className = 'insight-card__meta';
+            metaRow.className = 'mb-1 flex items-center gap-2 text-[0.7rem] text-slate-400';
             const voiceSpan = document.createElement('span');
             voiceSpan.textContent = insight.voice || 'Unknown voice';
             const dot = document.createElement('span');
-            dot.className = 'meta-dot';
+            dot.className = 'h-1 w-1 rounded-full bg-slate-500';
             const dateSpan = document.createElement('span');
             dateSpan.textContent = formatDate(insight.created_at);
             metaRow.appendChild(voiceSpan);
@@ -1334,21 +597,21 @@
             metaRow.appendChild(dateSpan);
 
             const textEl = document.createElement('p');
-            textEl.className = 'insight-card__text';
-            textEl.textContent = truncate(insight.text || '', 220);
+            textEl.className = 'mb-1 text-[0.75rem] text-slate-300';
+            textEl.textContent = truncate(insight.text || '', 200);
 
             const tagsRow = document.createElement('div');
-            tagsRow.className = 'insight-card__tags';
+            tagsRow.className = 'flex flex-wrap gap-1';
             if (Array.isArray(insight.tags) && insight.tags.length > 0) {
                 insight.tags.forEach((tag) => {
                     const span = document.createElement('span');
-                    span.className = 'tag';
+                    span.className = 'rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[0.65rem] text-slate-300';
                     span.textContent = tag;
                     tagsRow.appendChild(span);
                 });
             }
 
-            card.appendChild(titleEl);
+            card.appendChild(titleRow);
             card.appendChild(metaRow);
             card.appendChild(textEl);
             card.appendChild(tagsRow);
@@ -1375,9 +638,9 @@
         const cards = document.querySelectorAll('.insight-card');
         cards.forEach(card => {
             if (String(card.dataset.id) === String(selectedInsightId)) {
-                card.classList.add('insight-card--selected');
+                card.classList.add('border-sky-500', 'bg-slate-900');
             } else {
-                card.classList.remove('insight-card--selected');
+                card.classList.remove('border-sky-500', 'bg-slate-900');
             }
         });
     }
@@ -1401,9 +664,7 @@
 
         scored.sort((a, b) => {
             if (b.score !== a.score) return b.score - a.score;
-            const da = new Date(a.insight.created_at).getTime();
-            const db = new Date(b.insight.created_at).getTime();
-            return db - da;
+            return new Date(b.insight.created_at) - new Date(a.insight.created_at);
         });
 
         return scored.slice(0, maxCount);
@@ -1416,73 +677,87 @@
 
         if (!insight) {
             const empty = document.createElement('div');
-            empty.className = 'detail-empty';
+            empty.className = 'flex flex-1 items-center justify-center px-4 py-6 text-center text-[0.85rem] text-slate-400';
             empty.textContent = 'Select an insight from the list to see its full perspective.';
             container.appendChild(empty);
             return;
         }
 
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex h-full flex-col gap-3';
+
         const header = document.createElement('div');
-        header.className = 'detail-header';
+        header.className = 'space-y-1';
 
         const label = document.createElement('div');
-        label.className = 'detail-section-label';
+        label.className = 'text-[0.7rem] uppercase tracking-[0.18em] text-slate-400';
         label.textContent = 'Reading';
 
         const title = document.createElement('h2');
-        title.className = 'detail-title';
+        title.className = 'text-sm font-semibold text-slate-50';
         title.textContent = insight.title || '(Untitled insight)';
 
         const metaRow = document.createElement('div');
-        metaRow.className = 'detail-meta-row';
+        metaRow.className = 'flex flex-wrap items-center justify-between gap-2 text-[0.75rem] text-slate-300';
 
-        const metaMain = document.createElement('div');
-        metaMain.className = 'detail-meta-main';
+        const leftMeta = document.createElement('div');
+        leftMeta.className = 'flex items-center gap-2';
+
+        const voiceColor = getVoiceColor(insight.voice);
+        const voiceDot = document.createElement('span');
+        voiceDot.className = 'inline-flex h-2.5 w-2.5 rounded-full';
+        voiceDot.style.backgroundColor = voiceColor;
+
         const voiceSpan = document.createElement('span');
-        voiceSpan.innerHTML = `<strong>${insight.voice || 'Unknown voice'}</strong>`;
-        const metaDot = document.createElement('span');
-        metaDot.className = 'meta-dot';
+        voiceSpan.className = 'font-medium';
+        voiceSpan.textContent = insight.voice || 'Unknown voice';
+
+        const dot = document.createElement('span');
+        dot.className = 'h-1 w-1 rounded-full bg-slate-500';
+
         const dateSpan = document.createElement('span');
+        dateSpan.className = 'text-slate-400';
         dateSpan.textContent = formatDate(insight.created_at);
-        metaMain.appendChild(voiceSpan);
-        metaMain.appendChild(metaDot);
-        metaMain.appendChild(dateSpan);
+
+        leftMeta.appendChild(voiceDot);
+        leftMeta.appendChild(voiceSpan);
+        leftMeta.appendChild(dot);
+        leftMeta.appendChild(dateSpan);
 
         const actions = document.createElement('div');
-        actions.className = 'detail-actions';
+        actions.className = 'flex items-center gap-2';
 
         const focusVoiceBtn = document.createElement('button');
         focusVoiceBtn.type = 'button';
-        focusVoiceBtn.className = 'detail-pill-btn';
+        focusVoiceBtn.className = 'inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950 px-3 py-1 text-[0.7rem] text-slate-200 hover:border-sky-400';
         const focusDot = document.createElement('span');
-        focusDot.className = 'dot';
+        focusDot.className = 'inline-flex h-2 w-2 rounded-full';
+        focusDot.style.backgroundColor = voiceColor;
         const focusLabel = document.createElement('span');
         focusLabel.textContent = 'Focus on this voice';
         focusVoiceBtn.appendChild(focusDot);
         focusVoiceBtn.appendChild(focusLabel);
         focusVoiceBtn.addEventListener('click', () => {
             selectedVoices.clear();
-            if (insight.voice) {
-                selectedVoices.add(insight.voice);
-            }
+            if (insight.voice) selectedVoices.add(insight.voice);
             renderFilterChips();
             applyFilters();
         });
 
         actions.appendChild(focusVoiceBtn);
 
-        metaRow.appendChild(metaMain);
+        metaRow.appendChild(leftMeta);
         metaRow.appendChild(actions);
 
         const tagsRow = document.createElement('div');
-        tagsRow.className = 'detail-tags-row';
+        tagsRow.className = 'flex flex-wrap gap-1';
         if (Array.isArray(insight.tags) && insight.tags.length > 0) {
             insight.tags.forEach(tag => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'detail-tag-link';
+                btn.className = 'inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-950 px-2 py-0.5 text-[0.7rem] text-slate-300 hover:border-sky-400';
                 const dotEl = document.createElement('span');
-                dotEl.className = 'dot';
+                dotEl.className = 'inline-flex h-1.5 w-1.5 rounded-full bg-indigo-400';
                 const labelEl = document.createElement('span');
                 labelEl.textContent = tag;
                 btn.appendChild(dotEl);
@@ -1506,57 +781,57 @@
         header.appendChild(tagsRow);
 
         const layout = document.createElement('div');
-        layout.className = 'detail-main-layout';
+        layout.className = 'flex min-h-0 flex-1 flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1.9fr),minmax(240px,1.2fr)]';
 
         const body = document.createElement('div');
-        body.className = 'detail-body';
+        body.className = 'detail-body scroll-thin rounded-xl border border-slate-900 bg-slate-950/90 p-3 text-[0.85rem] leading-relaxed text-slate-100';
         body.textContent = insight.text || '';
 
         const relatedSection = document.createElement('section');
-        relatedSection.className = 'related-section';
+        relatedSection.className = 'flex min-h-0 flex-col gap-2 rounded-xl border border-slate-900 bg-slate-950/90 p-3 text-[0.8rem]';
 
         const relatedHeader = document.createElement('div');
-        relatedHeader.className = 'related-header';
+        relatedHeader.className = 'flex items-center justify-between gap-2';
         const relatedTitle = document.createElement('div');
-        relatedTitle.className = 'related-title';
+        relatedTitle.className = 'text-[0.7rem] uppercase tracking-[0.16em] text-slate-400';
         relatedTitle.textContent = 'Related perspectives';
         const relatedHint = document.createElement('div');
-        relatedHint.style.fontSize = '0.7rem';
-        relatedHint.style.color = 'var(--text-softer)';
+        relatedHint.className = 'text-[0.7rem] text-slate-500';
         relatedHint.textContent = 'Same voice and overlapping topics';
         relatedHeader.appendChild(relatedTitle);
         relatedHeader.appendChild(relatedHint);
 
         const relatedList = document.createElement('ul');
-        relatedList.className = 'related-list';
+        relatedList.className = 'scroll-thin mt-1 flex-1 list-none space-y-1 overflow-y-auto';
+
         const relatedItems = getRelatedInsights(insight);
         if (relatedItems.length === 0) {
             const none = document.createElement('div');
-            none.style.fontSize = '0.74rem';
-            none.style.color = 'var(--text-softer)';
+            none.className = 'text-[0.75rem] text-slate-500';
             none.textContent = 'No related insights yet. Explore other cards to trace shared themes.';
             relatedSection.appendChild(relatedHeader);
             relatedSection.appendChild(none);
         } else {
             relatedItems.forEach(item => {
                 const li = document.createElement('li');
-                li.className = 'related-item';
+                li.className = 'cursor-pointer rounded-full border border-slate-800 bg-slate-950 px-3 py-1.5 text-[0.75rem] text-slate-200 hover:border-sky-400 flex items-center justify-between gap-2';
+
                 const main = document.createElement('div');
-                main.className = 'related-main';
+                main.className = 'flex min-w-0 flex-col';
                 const titleText = document.createElement('span');
-                titleText.className = 'related-title-text';
+                titleText.className = 'truncate';
                 titleText.textContent = item.insight.title || '(Untitled insight)';
                 const meta = document.createElement('span');
-                meta.className = 'related-meta';
+                meta.className = 'text-[0.7rem] text-slate-400';
                 const shared = item.sharedTags && item.sharedTags.length > 0
-                    ? `· ${item.sharedTags.slice(0, 2).join(', ')}`
+                    ? ` · ${item.sharedTags.slice(0, 2).join(', ')}`
                     : '';
-                meta.textContent = `${item.insight.voice || 'Unknown'} ${shared}`;
+                meta.textContent = `${item.insight.voice || 'Unknown'}${shared}`;
                 main.appendChild(titleText);
                 main.appendChild(meta);
 
                 const pill = document.createElement('span');
-                pill.className = 'related-pill';
+                pill.className = 'whitespace-nowrap rounded-full border border-sky-500/70 bg-sky-500/10 px-2 py-0.5 text-[0.7rem] text-sky-300';
                 pill.textContent = formatDate(item.insight.created_at) || 'Related';
 
                 li.appendChild(main);
@@ -1575,19 +850,24 @@
         layout.appendChild(body);
         layout.appendChild(relatedSection);
 
-        container.appendChild(header);
-        container.appendChild(layout);
+        wrapper.appendChild(header);
+        wrapper.appendChild(layout);
+
+        container.appendChild(wrapper);
     }
 
     async function init() {
         try {
+            if (!window.store || !store.init) {
+                console.error('CrossStore (store) not found. Ensure cp-store.js is loaded.');
+                return;
+            }
+
             await store.init();
             allInsights = await store.getAll();
 
-            const voices = [...new Set(allInsights.map(i => i.voice).filter(Boolean))].sort((a, b) =>
-                a.toLowerCase().localeCompare(b.toLowerCase())
-            );
-
+            const voices = [...new Set(allInsights.map(i => i.voice).filter(Boolean))]
+                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
             const tagsSet = new Set();
             allInsights.forEach(insight => {
                 if (Array.isArray(insight.tags)) {
@@ -1596,9 +876,7 @@
                     });
                 }
             });
-            const tags = Array.from(tagsSet).sort((a, b) =>
-                a.toLowerCase().localeCompare(b.toLowerCase())
-            );
+            const tags = Array.from(tagsSet).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
             allVoices = voices;
             allTags = tags;
@@ -1606,13 +884,14 @@
             setupEventHandlers();
             renderFilterChips();
             applyFilters();
+            renderDetail(null);
         } catch (error) {
             console.error('Failed to initialize:', error);
             const list = document.getElementById('insightList');
             if (list) {
                 list.innerHTML = '';
                 const li = document.createElement('li');
-                li.className = 'insight-empty';
+                li.className = 'px-3 py-4 text-center text-xs text-red-400';
                 li.textContent = 'Unable to read from the CrossPerspectivesDB IndexedDB store. Open DevTools → Console for details.';
                 list.appendChild(li);
             }
@@ -1620,7 +899,7 @@
             if (detail) {
                 detail.innerHTML = '';
                 const errorBox = document.createElement('div');
-                errorBox.className = 'detail-empty';
+                errorBox.className = 'flex flex-1 items-center justify-center px-4 py-6 text-center text-[0.85rem] text-red-400';
                 errorBox.textContent = 'The reader could not connect to the database. Please ensure CrossPerspectivesDB is populated in this browser.';
                 detail.appendChild(errorBox);
             }
