@@ -2,174 +2,371 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Reader | Cross Perspectives</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross Perspectives</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .font-serif { font-family: 'Crimson Pro', serif; }
-        
-        /* ProjectDeck-style Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; } 
+        ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="bg-[#0B1120] text-slate-300 h-screen flex flex-col overflow-hidden selection:bg-emerald-900 selection:text-white">
+<body class="bg-[#0B1120] text-slate-300 selection:bg-emerald-900 selection:text-white">
 
-    <!-- HEADER -->
-    <header class="flex-shrink-0 bg-[#0F172A]/80 backdrop-blur border-b border-slate-800/60 px-8 py-4 z-10">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
+<div class="flex h-screen overflow-hidden">
+    
+    <!-- SIDEBAR -->
+    <aside class="w-80 bg-[#0F172A] border-r border-slate-800/60 flex flex-col overflow-hidden">
+        
+        <!-- Header -->
+        <div class="flex-shrink-0 p-6 border-b border-slate-800/60">
+            <h1 class="text-2xl font-bold text-emerald-400 tracking-tight mb-1">Cross Perspectives</h1>
+            <p class="text-xs text-slate-500 font-mono" id="status-text">Loading...</p>
+        </div>
+
+        <!-- Scrollable Filters -->
+        <div class="flex-1 overflow-y-auto px-6 py-6 space-y-8">
             
-            <!-- Branding & Navigation -->
-            <div class="flex items-baseline gap-6">
-                <h1 class="text-xl font-bold text-emerald-400 tracking-tight">Cross Perspectives</h1>
-                <a href="cp-hub.html" class="flex items-center gap-2 text-[10px] font-bold text-slate-500 hover:text-emerald-400 transition-colors uppercase tracking-widest">
-                    <span>←</span> Studio Hub
-                </a>
+            <!-- Voice Filter -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Filter by Voice</h3>
+                <div id="voice-checkboxes" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </div>
             </div>
 
-            <!-- Voice Dropdown -->
-            <div class="relative group min-w-[240px]">
-                <select id="voice-select" onchange="app.filterBy(this.value)" 
-                    class="appearance-none w-full bg-[#1E293B] border border-slate-700 text-slate-200 text-sm font-medium rounded-lg pl-4 pr-10 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer hover:border-slate-600 shadow-lg shadow-black/20">
-                    <option value="">All Perspectives</option>
-                    <!-- Options injected by JS from database -->
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-emerald-400 transition-colors">
-                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            <!-- Topic Filter -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Filter by Topic</h3>
+                <div id="topic-checkboxes" class="space-y-2">
+                    <!-- Populated dynamically -->
                 </div>
             </div>
 
         </div>
-    </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 overflow-y-auto" id="scroll-container">
-        <!-- Header Info -->
-        <div class="max-w-5xl mx-auto px-8 pt-8 pb-4 flex justify-between items-end border-b border-slate-800/40">
-            <h2 id="view-title" class="text-2xl text-slate-100 font-semibold font-serif italic">Library Overview</h2>
-            <div class="text-xs text-slate-500 font-mono" id="status-indicator">Loading Data...</div>
+        <!-- Footer Links -->
+        <div class="flex-shrink-0 p-6 border-t border-slate-800/60 space-y-2">
+            <a href="cp-hub.html" class="block text-xs text-slate-500 hover:text-emerald-400 transition-colors">
+                → Studio Hub
+            </a>
+            <a href="cp-viewer.html" class="block text-xs text-slate-500 hover:text-emerald-400 transition-colors">
+                → Simple Reader
+            </a>
         </div>
 
-        <!-- Grid -->
-        <div id="grid" class="max-w-5xl mx-auto p-8 space-y-8 pb-32"></div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        
+        <!-- All Voices Indicator -->
+        <div id="all-voices-banner" class="flex-shrink-0 bg-emerald-500/10 border-b border-emerald-500/20 px-8 py-3 text-center">
+            <span class="text-sm font-medium text-emerald-400">Viewing All Voices</span>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto" id="scroll-container">
+            <div class="max-w-5xl mx-auto p-8">
+                <div id="grid" class="space-y-6"></div>
+            </div>
+        </div>
+
     </main>
 
-    <!-- DEPENDENCIES -->
-    <script src="cp-config.js"></script>
-    <script src="cp-store.js"></script>
-    <script src="cp-renderers.js"></script>
+    <!-- DETAIL PANEL (Hidden by default) -->
+    <aside id="detail-panel" class="w-[600px] bg-[#0F172A] border-l border-slate-800/60 overflow-y-auto hidden">
+        <div class="p-8">
+            <button onclick="app.closeDetail()" class="mb-6 text-xs text-slate-500 hover:text-emerald-400 transition-colors">
+                ← Back to Grid
+            </button>
+            <div id="detail-content"></div>
+            <div id="related-content" class="mt-8"></div>
+        </div>
+    </aside>
 
-    <script>
-        const app = {
-            active: null,
+</div>
 
-            async init() {
-                await store.init();
-                
-                // Get total count and update status
-                const total = await store.db.insights.count();
-                document.getElementById('status-indicator').textContent = 
-                    total > 0 ? `${total} insights loaded` : "Database empty";
+<!-- DEPENDENCIES -->
+<script src="cp-config.js"></script>
+<script src="cp-store.js"></script>
+<script src="cp-renderers.js"></script>
 
-                // Populate dropdown from database voices
-                await this.renderDropdown();
-                
-                // Render content
-                this.render();
-            },
+<script>
+const app = {
+    selectedVoices: [],
+    selectedTopics: [],
+    activeDetail: null,
 
-            async renderDropdown() {
-                const select = document.getElementById('voice-select');
-                
-                // Get unique voices from database, sorted alphabetically
-                const voices = await store.db.insights
-                    .orderBy('voice')
-                    .uniqueKeys();
-                
-                voices.sort();
-                
-                // Add each voice as an option
-                voices.forEach(v => {
-                    const option = document.createElement('option');
-                    option.value = v;
-                    option.textContent = v;
-                    select.appendChild(option);
-                });
-            },
+    async init() {
+        await store.init();
+        
+        // Get counts
+        const total = await store.db.insights.count();
+        const voiceCount = (await store.db.insights.orderBy('voice').uniqueKeys()).length;
+        
+        document.getElementById('status-text').textContent = 
+            `${total} insights • ${voiceCount} voices`;
 
-            async render() {
-                const data = this.active ? await store.getByVoice(this.active) : await store.getAll();
-                const grid = document.getElementById('grid');
+        // Populate filters from database
+        await this.renderVoiceCheckboxes();
+        await this.renderTopicCheckboxes();
+        
+        // Render grid
+        this.render();
+    },
 
-                // Update Title
-                document.getElementById('view-title').innerText = this.active || "All Perspectives";
+    async renderVoiceCheckboxes() {
+        const container = document.getElementById('voice-checkboxes');
+        
+        // Get unique voices from database, sorted alphabetically
+        const voices = await store.db.insights.orderBy('voice').uniqueKeys();
+        voices.sort();
+        
+        container.innerHTML = voices.map(voice => {
+            const color = this.getVoiceColor(voice);
+            return `
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" value="${voice}" 
+                        onchange="app.toggleVoice('${voice}')"
+                        class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer">
+                    <span class="text-sm text-slate-300 group-hover:text-slate-100 transition-colors flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full" style="background-color: ${color};"></span>
+                        ${voice}
+                    </span>
+                </label>
+            `;
+        }).join('');
+    },
 
-                if (data.length === 0) {
-                    grid.innerHTML = this.renderEmptyState();
-                    return;
-                }
+    async renderTopicCheckboxes() {
+        const container = document.getElementById('topic-checkboxes');
+        
+        // Get unique tags from all insights
+        const allInsights = await store.getAll();
+        const tagSet = new Set();
+        allInsights.forEach(insight => {
+            (insight.tags || []).forEach(tag => tagSet.add(tag));
+        });
+        
+        const topics = Array.from(tagSet).sort();
+        
+        container.innerHTML = topics.map(topic => `
+            <label class="flex items-center gap-2 cursor-pointer group">
+                <input type="checkbox" value="${topic}"
+                    onchange="app.toggleTopic('${topic}')"
+                    class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0 cursor-pointer">
+                <span class="text-sm text-slate-300 group-hover:text-slate-100 transition-colors">
+                    ${topic}
+                </span>
+            </label>
+        `).join('');
+    },
 
-                // Check if Renderers object exists (from cp-renderers.js), otherwise use local fallback
-                if (typeof Renderers !== 'undefined' && Renderers.insightCard) {
-                    grid.innerHTML = data.map(Renderers.insightCard).join('');
-                } else {
-                    grid.innerHTML = data.map(item => this.localRenderCard(item)).join('');
-                }
-            },
+    toggleVoice(voice) {
+        const idx = this.selectedVoices.indexOf(voice);
+        if (idx > -1) this.selectedVoices.splice(idx, 1);
+        else this.selectedVoices.push(voice);
+        this.render();
+    },
 
-            // Fallback renderer if cp-renderers.js is missing or incompatible
-            localRenderCard(i) {
-                return `
-                <div class="bg-[#151F32] border border-slate-700/50 rounded-xl p-8 hover:border-slate-600 transition-colors shadow-sm group">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-500/90 bg-emerald-500/10 px-2 py-1 rounded">
-                                    ${i.voice}
-                                </span>
-                                <span class="text-[11px] font-mono text-slate-500">
-                                    ${new Date(i.created_at).toLocaleDateString()}
-                                </span>
-                            </div>
-                            <h3 class="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition-colors font-serif">${i.title}</h3>
-                        </div>
-                    </div>
-                    <p class="font-serif text-[18px] leading-relaxed text-slate-300 mb-6 border-l-2 border-slate-800 pl-4 group-hover:border-emerald-500/30 transition-colors">
-                        ${i.text}
-                    </p>
-                    <div class="flex flex-wrap gap-2">
-                        ${(i.tags || []).map(t => `
-                            <span class="text-[10px] uppercase font-bold tracking-wide px-2.5 py-1 rounded-md bg-[#0B1120] border border-slate-700 text-slate-400 group-hover:text-slate-300 group-hover:border-slate-600 transition-colors">
-                                ${t}
-                            </span>
-                        `).join('')}
-                    </div>
-                </div>`;
-            },
+    toggleTopic(topic) {
+        const idx = this.selectedTopics.indexOf(topic);
+        if (idx > -1) this.selectedTopics.splice(idx, 1);
+        else this.selectedTopics.push(topic);
+        this.render();
+    },
 
-            renderEmptyState() {
-                return `
+    async render() {
+        const data = await store.getAll();
+        
+        // Apply filters
+        let filtered = data;
+        
+        if (this.selectedVoices.length > 0) {
+            filtered = filtered.filter(i => this.selectedVoices.includes(i.voice));
+        }
+        
+        if (this.selectedTopics.length > 0) {
+            filtered = filtered.filter(i => 
+                (i.tags || []).some(t => this.selectedTopics.includes(t))
+            );
+        }
+
+        // Update "All Voices" banner
+        const banner = document.getElementById('all-voices-banner');
+        if (this.selectedVoices.length === 0) {
+            banner.classList.remove('opacity-30');
+        } else {
+            banner.classList.add('opacity-30');
+        }
+
+        // Render grid
+        this.renderGrid(filtered);
+    },
+
+    renderGrid(data) {
+        const grid = document.getElementById('grid');
+        
+        if (data.length === 0) {
+            grid.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/20">
                     <div class="text-slate-600 mb-2 text-4xl">∅</div>
-                    <p class="text-slate-500 font-medium text-sm">No insights found.</p>
-                    <a href="cp-hub.html" class="mt-4 text-xs text-emerald-400 hover:text-emerald-300 transition-colors">
-                        → Add content in Studio Hub
-                    </a>
+                    <p class="text-slate-500 font-medium text-sm">No insights match your filters.</p>
                 </div>`;
-            },
+            return;
+        }
 
-            filterBy(val) {
-                this.active = val;
-                this.render();
-                document.getElementById('scroll-container').scrollTop = 0;
-            }
-        };
+        // Group by voice
+        const grouped = {};
+        data.forEach(item => {
+            if (!grouped[item.voice]) grouped[item.voice] = [];
+            grouped[item.voice].push(item);
+        });
 
-        app.init();
-    </script>
+        // Render sections
+        grid.innerHTML = Object.keys(grouped).sort().map(voice => {
+            const color = this.getVoiceColor(voice);
+            const items = grouped[voice];
+            
+            return `
+                <div class="mb-8">
+                    <div class="flex items-center gap-3 mb-4 pb-2 border-b border-slate-800/60">
+                        <span class="w-3 h-3 rounded-full" style="background-color: ${color};"></span>
+                        <h2 class="text-xl font-bold text-slate-200">${voice}</h2>
+                        <span class="text-xs text-slate-500 font-mono">${items.length} insight${items.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="space-y-4">
+                        ${items.map(item => this.renderCard(item)).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    renderCard(item) {
+        const color = this.getVoiceColor(item.voice);
+        return `
+            <div onclick="app.showDetail(${item.id})" 
+                class="bg-[#151F32] border border-slate-700/50 rounded-xl p-6 cursor-pointer hover:border-slate-600 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-1 hover:scale-[1.01] hover:brightness-110 transition-all duration-200 group">
+                
+                <div class="flex items-start justify-between mb-3">
+                    <h3 class="text-lg font-bold text-slate-100 group-hover:text-emerald-400 transition-colors font-serif flex-1">
+                        ${item.title}
+                    </h3>
+                    <span class="text-[10px] font-mono text-slate-500 ml-4">
+                        ${new Date(item.created_at).toLocaleDateString()}
+                    </span>
+                </div>
+
+                <p class="font-serif text-base leading-relaxed text-slate-300 mb-4 line-clamp-3 border-l-2 pl-4 group-hover:border-emerald-500/30 transition-colors" 
+                    style="border-color: ${color};">
+                    ${item.text}
+                </p>
+
+                <div class="flex flex-wrap gap-2">
+                    ${(item.tags || []).map(t => `
+                        <span class="text-[10px] uppercase font-bold tracking-wide px-2 py-1 rounded bg-[#0B1120] border border-slate-700 text-slate-400">
+                            ${t}
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    },
+
+    async showDetail(id) {
+        this.activeDetail = id;
+        const item = await store.db.insights.get(id);
+        const color = this.getVoiceColor(item.voice);
+
+        document.getElementById('detail-content').innerHTML = `
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="w-3 h-3 rounded-full" style="background-color: ${color};"></span>
+                    <span class="text-xs font-bold uppercase tracking-widest text-emerald-500/90">
+                        ${item.voice}
+                    </span>
+                    <span class="text-xs font-mono text-slate-500">
+                        ${new Date(item.created_at).toLocaleDateString()}
+                    </span>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-100 font-serif mb-4">${item.title}</h2>
+            </div>
+
+            <div class="prose prose-invert prose-slate max-w-none">
+                <p class="font-serif text-lg leading-relaxed text-slate-300 border-l-4 pl-6" style="border-color: ${color};">
+                    ${item.text}
+                </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mt-6">
+                ${(item.tags || []).map(t => `
+                    <span class="text-xs uppercase font-bold tracking-wide px-3 py-1.5 rounded-lg bg-[#0B1120] border border-slate-700 text-slate-300">
+                        ${t}
+                    </span>
+                `).join('')}
+            </div>
+        `;
+
+        await this.renderRelated(item);
+        document.getElementById('detail-panel').classList.remove('hidden');
+    },
+
+    async renderRelated(item) {
+        const all = await store.getAll();
+        const related = all
+            .filter(i => i.id !== item.id && (i.tags || []).some(t => (item.tags || []).includes(t)))
+            .slice(0, 3);
+
+        if (related.length === 0) {
+            document.getElementById('related-content').innerHTML = '';
+            return;
+        }
+
+        document.getElementById('related-content').innerHTML = `
+            <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Related Insights</h3>
+            <div class="space-y-3">
+                ${related.map(r => {
+                    const color = this.getVoiceColor(r.voice);
+                    return `
+                        <div onclick="app.showDetail(${r.id})" 
+                            class="bg-[#1E293B] border border-slate-700/50 rounded-lg p-4 cursor-pointer hover:border-slate-600 transition-colors">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-2 h-2 rounded-full" style="background-color: ${color};"></span>
+                                <span class="text-xs font-bold text-slate-400">${r.voice}</span>
+                            </div>
+                            <h4 class="text-sm font-semibold text-slate-200 font-serif">${r.title}</h4>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    },
+
+    closeDetail() {
+        this.activeDetail = null;
+        document.getElementById('detail-panel').classList.add('hidden');
+    },
+
+    getVoiceColor(voice) {
+        const colors = [
+            '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+            '#ef4444', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+        ];
+        const voices = CONFIG?.VOICES || [];
+        const index = voices.indexOf(voice);
+        return index !== -1 ? colors[index % colors.length] : colors[0];
+    }
+};
+
+app.init();
+</script>
+
 </body>
 </html>
