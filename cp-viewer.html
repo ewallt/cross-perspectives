@@ -2,218 +2,80 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cross Perspectives - Theological Knowledge Base</title>
+    <title>Reader | Cross Perspectives</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-serif { font-family: 'Crimson Pro', serif; }
         
-        .insight-card {
-            animation: fadeIn 0.3s ease-out;
-        }
-        
-        .voice-lane {
-            transition: all 0.3s ease;
-        }
-        
-        .voice-lane.dimmed {
-            opacity: 0.2;
-        }
-        
-        .tag-pill {
-            transition: all 0.2s ease;
-        }
-        
-        .tag-pill.highlighted {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px currentColor;
-        }
-        
-        .connection-line {
-            position: absolute;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, currentColor, transparent);
-            opacity: 0.3;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        
-        .connection-line.active {
-            opacity: 0.8;
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #18181b;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #3f3f46;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #52525b;
-        }
+        /* ProjectDeck-style Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; } 
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
     </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 overflow-hidden">
-    <div class="flex flex-col h-screen">
-        <!-- Header -->
-        <header class="bg-gradient-to-r from-violet-950 via-purple-950 to-indigo-950 border-b border-purple-800/30 px-6 py-4 shadow-xl">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-purple-300">
-                        Cross Perspectives
-                    </h1>
-                    <p class="text-sm text-purple-300/70 mt-1">
-                        Exploring theological insights across voices and topics
-                    </p>
-                </div>
-                <div class="flex items-center space-x-6">
-                    <!-- Global Filter (Header) -->
-                    <div class="relative group">
-                        <select id="headerVoiceSelect" class="appearance-none bg-black/30 border border-purple-500/30 text-purple-100 text-sm rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 cursor-pointer hover:bg-black/40 transition-colors">
-                            <option value="">All Voices (Global)</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-purple-300">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
+<body class="bg-[#0B1120] text-slate-300 h-screen flex flex-col overflow-hidden selection:bg-emerald-900 selection:text-white">
 
-                    <div class="text-right text-sm text-purple-300/70 border-l border-purple-500/20 pl-6">
-                        <div id="insightCount">0 insights</div>
-                        <div id="voiceCount">0 voices</div>
-                    </div>
-                </div>
+    <!-- HEADER: Replaces Sidebar Navigation -->
+    <header class="flex-shrink-0 bg-[#0F172A]/80 backdrop-blur border-b border-slate-800/60 px-8 py-4 z-10">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            
+            <!-- Branding & Navigation -->
+            <div class="flex items-baseline gap-6">
+                <h1 class="text-xl font-bold text-emerald-400 tracking-tight">Cross Perspectives</h1>
+                <a href="cp-hub.html" class="flex items-center gap-2 text-[10px] font-bold text-slate-500 hover:text-emerald-400 transition-colors uppercase tracking-widest">
+                    <span>←</span> Studio Hub
+                </a>
             </div>
-        </header>
 
-        <!-- Main Content -->
-        <div class="flex flex-1 overflow-hidden">
-            <!-- Left Sidebar: Filters -->
-            <div class="w-80 bg-zinc-900 border-r border-zinc-800 overflow-y-auto">
-                <div class="p-6 space-y-6">
-                    <!-- Search -->
-                    <div>
-                        <label class="block text-sm font-semibold text-zinc-400 mb-2">Search Insights</label>
-                        <input 
-                            type="text" 
-                            id="searchInput"
-                            placeholder="Search text, titles, voices..."
-                            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        />
-                    </div>
-
-                    <!-- View Mode Toggle -->
-                    <div>
-                        <label class="block text-sm font-semibold text-zinc-400 mb-2">View Mode</label>
-                        <div class="flex gap-2">
-                            <button 
-                                id="viewByVoice"
-                                class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-all"
-                            >
-                                By Voice
-                            </button>
-                            <button 
-                                id="viewByTag"
-                                class="flex-1 px-4 py-2 bg-zinc-800 text-zinc-400 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-all"
-                            >
-                                By Topic
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Voices Filter -->
-                    <div>
-                        <label class="block text-sm font-semibold text-zinc-400 mb-3">Voices</label>
-                        <div id="voiceFilters" class="space-y-2"></div>
-                    </div>
-
-                    <!-- Tags Filter -->
-                    <div>
-                        <label class="block text-sm font-semibold text-zinc-400 mb-3">Topics</label>
-                        <div id="tagFilters" class="flex flex-wrap gap-2"></div>
-                    </div>
-
-                    <!-- Sort Options -->
-                    <div>
-                        <label class="block text-sm font-semibold text-zinc-400 mb-2">Sort By</label>
-                        <select 
-                            id="sortSelect"
-                            class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        >
-                            <option value="recent">Most Recent</option>
-                            <option value="oldest">Oldest First</option>
-                            <option value="voice">Voice (A-Z)</option>
-                            <option value="title">Title (A-Z)</option>
-                        </select>
-                    </div>
-
-                    <!-- Clear Filters -->
-                    <button 
-                        id="clearFilters"
-                        class="w-full px-4 py-2 bg-zinc-800 text-zinc-400 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-all"
-                    >
-                        Clear All Filters
-                    </button>
+            <!-- Voice Dropdown (The new navigation) -->
+            <div class="relative group min-w-[240px]">
+                <select id="voice-select" onchange="app.filterBy(this.value)" 
+                    class="appearance-none w-full bg-[#1E293B] border border-slate-700 text-slate-200 text-sm font-medium rounded-lg pl-4 pr-10 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer hover:border-slate-600 shadow-lg shadow-black/20">
+                    <option value="">All Perspectives</option>
+                    <!-- Options injected by JS -->
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-emerald-400 transition-colors">
+                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                 </div>
             </div>
 
-            <!-- Main Viewing Area: Cross-Hatch Layout -->
-            <div class="flex-1 overflow-hidden bg-zinc-950">
-                <div id="mainView" class="h-full overflow-y-auto p-6">
-                    <div id="loadingState" class="flex items-center justify-center h-full">
-                        <div class="text-center">
-                            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
-                            <p class="text-zinc-400 mt-4">Loading insights...</p>
-                        </div>
-                    </div>
-                    <div id="contentArea" class="hidden"></div>
-                    <div id="emptyState" class="hidden flex items-center justify-center h-full">
-                        <div class="text-center max-w-md">
-                            <svg class="mx-auto h-24 w-24 text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            <h3 class="mt-4 text-xl font-semibold text-zinc-400">No insights found</h3>
-                            <p class="mt-2 text-sm text-zinc-500">Try adjusting your filters or search criteria</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Sidebar: Detail View -->
-            <div id="detailPanel" class="hidden w-96 bg-zinc-900 border-l border-zinc-800 overflow-y-auto shadow-2xl relative z-10">
-                <div id="detailContent" class="p-6"></div>
-            </div>
         </div>
-    </div>
+    </header>
 
-    <!-- INTEGRATION LAYER: DEFINING THE STORE AND CONFIG MANUALLY -->
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-y-auto" id="scroll-container">
+        <!-- Header Info -->
+        <div class="max-w-5xl mx-auto px-8 pt-8 pb-4 flex justify-between items-end border-b border-slate-800/40">
+            <h2 id="view-title" class="text-2xl text-slate-100 font-semibold font-serif italic">Library Overview</h2>
+            <div class="text-xs text-slate-500 font-mono" id="status-indicator">Loading Data...</div>
+        </div>
+
+        <!-- Grid -->
+        <div id="grid" class="max-w-5xl mx-auto p-8 space-y-8 pb-32"></div>
+    </main>
+
+    <!-- DEPENDENCIES -->
+    <script src="cp-config.js"></script>
+    <script src="cp-store.js"></script>
+    <!-- Use Renderers if available, otherwise fallback is inside -->
+    <script src="cp-renderers.js"></script>
+
     <script>
-        const CONFIG = {
-            APP_TITLE: "Cross Perspectives",
-            VERSION: "1.0",
-            VOICES: [
-                "Graham Maxwell", "Marilyn Campbell", "F. T. Wright", "J. D. Myers", "Greg Boyd",
-                "René Girard", "Ellen G. White", "N. T. Wright", "Richard B. Hays", 
-                "Jürgen Moltmann", "John Chrysostom", "Tertullian", 
-                "George Fifield", "Miroslav Volf", "Derek Flood", "J. Denny Weaver", "Robert J. Wieland",
-                "The Analyst (AI Synthesis Voice)"
-            ],
-            TAGS: ["Atonement", "Non-Violence", "Justice", "Trinity", "Scapegoat", "Judgment"]
-        };
+        // --- 1. LOCAL CONFIG OVERRIDE ---
+        // We define this locally to ensure the new voices appear even if cp-config.js is old.
+        const LOCAL_VOICES = [
+            "Graham Maxwell", "Marilyn Campbell", "F. T. Wright", "J. D. Myers", "Greg Boyd",
+            "René Girard", "Ellen G. White", "N. T. Wright", "Richard B. Hays", 
+            "Jürgen Moltmann", "John Chrysostom", "Tertullian", 
+            "George Fifield", "Miroslav Volf", "Derek Flood", "J. Denny Weaver", "Robert J. Wieland",
+            "The Analyst (AI Synthesis Voice)"
+        ];
 
-        // --- SEED DATA FOR AUTO-DEPLOYMENT ---
+        // --- 2. SEED DATA INJECTION ---
         const SEED_DATA = [
             // N. T. Wright
             { voice: "N. T. Wright", title: "New Creation vs. Going to Heaven", text: "The point of the gospel is not abandoning earth for a disembodied heaven, but the restoration of earth itself. God is coming here to dwell with his people in a renewed creation.", tags: ["Justice", "Judgment"] },
@@ -222,703 +84,137 @@
             { voice: "N. T. Wright", title: "Resurrection is Bodily", text: "Resurrection does not mean 'life after death'; it means 'life *after* life after death.' It is the bodily raising of the dead to live in the new creation, of which Jesus is the prototype.", tags: ["Justice", "Judgment"] },
             { voice: "N. T. Wright", title: "Justification is Ecclesial", text: "Justification is not how you *become* a Christian; it is the declaration that you *are* one. It is the law-court verdict that identifies the true members of the covenant family before the final judgment.", tags: ["Justice", "Judgment"] },
             { voice: "N. T. Wright", title: "The Exhaustion of Evil", text: "On the cross, evil did its worst to Jesus, and He exhausted its power. He didn't just pay a penalty; He drew the infection of the world onto Himself and let it kill Him, thereby killing the infection.", tags: ["Atonement", "Non-Violence"] },
-            { voice: "N. T. Wright", title: "Heaven and Earth Interlock", text: "Heaven is not a distant location in the sky; it is God's dimension of reality. Earth is our dimension. The Temple (and Jesus) is where these two dimensions overlap and interlock.", tags: ["Trinity", "Justice"] },
-            { voice: "N. T. Wright", title: "The Royal Revolution", text: "The gospels are not just about how to get saved; they are the story of how God became King on earth as in heaven. The crucifixion was the coronation ceremony of the true King.", tags: ["Justice", "Atonement"] },
-            { voice: "N. T. Wright", title: "Exile and Return", text: "First-century Israel believed they were still in exile because the presence of God had not returned to the Temple. Jesus acted as the return of Yahweh to Zion, bringing the exile to its climax and end.", tags: ["Judgment", "Scapegoat"] },
-            { voice: "N. T. Wright", title: "Vocation of Humans", text: "The 'Image of God' is a vocation, not just a trait. We are angled mirrors, meant to reflect God's wise rule into the world and reflect the praises of creation back to God.", tags: ["Justice", "Trinity"] },
-            { voice: "N. T. Wright", title: "The Victory of God", text: "The atonement is a victory over the Powers (Christus Victor) achieved through representative substitution. We must not pit victory against substitution; the victory *is* achieved by the substitution.", tags: ["Atonement", "Justice"] },
-            { voice: "N. T. Wright", title: "Evil is Parasitic", text: "Evil has no independent existence; it is a parasite on the good creation. God's solution is not to destroy the host (creation) but to extract the parasite (sin) through judgment, so the world can be healed.", tags: ["Judgment", "Non-Violence"] },
-            { voice: "N. T. Wright", title: "Ascension as Sovereignty", text: "The Ascension is not Jesus 'going away'; it is Jesus going to the executive control room of the cosmos. He is present with us now by the Spirit, directing the operations of the Kingdom.", tags: ["Trinity", "Justice"] },
-            { voice: "N. T. Wright", title: "Platonism is the Enemy", text: "Much of popular Christianity is Platonism (fleeing the material world) rather than biblical theology (redeeming the material world). Matter matters to God.", tags: ["Justice", "Judgment"] },
-            { voice: "N. T. Wright", title: "Forgiveness is Release", text: "Forgiveness is not just a feeling; it is the release of a debt. In the Bible, sin creates a debt that keeps the world in slavery. The Cross pays the debt so the slaves can be freed for the new exodus.", tags: ["Atonement", "Scapegoat"] },
-            { voice: "N. T. Wright", title: "The Spirit as Down Payment", text: "The Holy Spirit is the 'arrabon' (down payment) of the future. The Spirit allows us to live in the present age with the life and power of the age to come.", tags: ["Trinity", "Justice"] },
-            { voice: "N. T. Wright", title: "Jesus as Israel", text: "Where Israel failed to be the light of the world, Jesus succeeded. He took Israel's vocation—and its curse—upon Himself, acting as the faithful remnant of one.", tags: ["Atonement", "Scapegoat"] },
-            { voice: "N. T. Wright", title: "Collaborators", text: "We are not just passive beneficiaries of salvation; we are 'co-laborers.' We are called to implement the victory of the Cross in the world through justice, beauty, and healing.", tags: ["Justice", "Non-Violence"] },
-            { voice: "N. T. Wright", title: "Love as Ultimate Logic", text: "The resurrection proved that love is stronger than death. Therefore, every act of love, no matter how small, is part of the building material of the new creation and will last forever.", tags: ["Non-Violence", "Trinity"] },
             
-            // George Fifield (Isaiah 53 Sermon)
+            // George Fifield
             { voice: "George Fifield", title: "We Esteemed Him Stricken", text: "In Isaiah 53, the prophet says 'we esteemed him stricken, smitten of God.' This was the human view, but it was false. We thought God was killing Him, but in reality, 'He was wounded for our transgressions.' It was sin that killed Him, not the Father.", tags: ["Atonement", "Trinity"] },
             { voice: "George Fifield", title: "The Wrath of Man vs. God", text: "There is a distinction between the wrath of God and the wrath of man. God's wrath is the withdrawing of His protection; man's wrath is active violence. At the cross, God withdrew, and the wrath of man and Satan did the killing.", tags: ["Judgment", "Non-Violence"] },
             { voice: "George Fifield", title: "God Does Not Kill", text: "Jesus came to reveal the Father. Jesus never killed; He healed and saved. Therefore, the Father never kills. The sword that slays the wicked is not in God's hand, but is the result of separation from the Source of Life.", tags: ["Non-Violence", "Trinity"] },
-            { voice: "George Fifield", title: "The Hiding of the Face", text: "The greatest agony of the cross was not the physical pain, but the hiding of the Father's face. God did not attack His Son; He allowed the darkness of sin to separate them in Christ's consciousness.", tags: ["Atonement", "Judgment"] },
-            { voice: "George Fifield", title: "Natural Law in the Spiritual World", text: "God's laws are not arbitrary edicts but the laws of our being. Sin is not punished by an external executive act, but by the natural result of the violation of the law of life.", tags: ["Justice", "Judgment"] },
-            { voice: "George Fifield", title: "The Sword of the Spirit", text: "The only sword Christ wields proceeds from His mouth. It is the Truth. It slays sin, not the sinner. If the sinner clings to sin, they perish with it, but God's intent is to separate the man from the disease.", tags: ["Non-Violence", "Justice"] },
-            { voice: "George Fifield", title: "Calvary Reveals the Father", text: "If you want to know how God feels about sin and sinners, look at Calvary. He does not rain down fire; He bears the sin of the world. He suffers the consequences of our rebellion to win us back.", tags: ["Trinity", "Atonement"] },
-            { voice: "George Fifield", title: "The Cost of Forgiveness", text: "Forgiveness is not a legal fiction; it is a transfer of life. It costs the forgiver something. God forgives us by taking the burden of our sin upon His own heart and absorbing the pain of it.", tags: ["Atonement", "Justice"] },
-            { voice: "George Fifield", title: "Separation is Death", text: "God is the only source of life. Therefore, complete separation from God is, by definition, cessation of existence. God does not need to execute a sinner; the sinner executes themselves by severing the connection.", tags: ["Judgment", "Justice"] },
-            { voice: "George Fifield", title: "The Cup of Trembling", text: "The cup Jesus drank in Gethsemane was not the cup of God's indignation against Him, but the cup of the sins of the world. He tasted death for every man—the second death, which is total alienation from God.", tags: ["Atonement", "Scapegoat"] },
-            { voice: "George Fifield", title: "Pagan vs. Christian Sacrifice", text: "In paganism, man offers a sacrifice to appease an angry god. In Christianity, the loving God provides the sacrifice to reconcile an estranged man. The direction of the offering is entirely reversed.", tags: ["Atonement", "Scapegoat"] },
-            { voice: "George Fifield", title: "The Law of Love", text: "The Ten Commandments are not a list of prohibitions but a description of the character of God. They are ten promises of what God will do in the heart that trusts Him.", tags: ["Justice", "Trinity"] },
-            { voice: "George Fifield", title: "Force Creates Rebels", text: "You can force a man to serve, but you cannot force him to love. God desires love, therefore He has renounced the use of force. His government is based entirely on the freedom of the will.", tags: ["Non-Violence", "Justice"] },
-            { voice: "George Fifield", title: "God in Christ", text: "We must not think of Christ pleading with a reluctant Father. 'God was in Christ, reconciling the world to Himself.' The Father and Son were one in the act of redemption.", tags: ["Trinity", "Atonement"] },
-            { voice: "George Fifield", title: "The Consuming Fire", text: "God is a consuming fire to sin because His nature is intense purity and love. To the sinner who identifies with sin, this presence feels like destruction; to the saint, it is warmth and light.", tags: ["Judgment", "Trinity"] },
-            { voice: "George Fifield", title: "The Scapegoat", text: "Azazel, the scapegoat sent into the wilderness, represents Satan, the author of sin. He does not make atonement; he simply carries the final responsibility for the rebellion back to its source.", tags: ["Scapegoat", "Judgment"] },
-            { voice: "George Fifield", title: "Divine Suffering", text: "God is not impassible; He is the most sensitive Being in the universe. He feels every sorrow and every sin of His creatures. The cross was the visible manifestation of the eternal suffering of God.", tags: ["Trinity", "Atonement"] },
-            { voice: "George Fifield", title: "Victory by Surrender", text: "Christ conquered Satan not by using Satan's weapons of force, but by surrendering to them. By dying, He destroyed him who had the power of death. Weakness defeated power.", tags: ["Non-Violence", "Justice"] },
-            { voice: "George Fifield", title: "The Mercy Seat", text: "In the ark of the covenant, the mercy seat (cover) was placed *above* the law. This signifies that while the law is the foundation of God's throne, mercy is the administration of it.", tags: ["Justice", "Atonement"] },
-            { voice: "George Fifield", title: "Healing the Mind", text: "The problem of sin is in the mind—enmity against God. Therefore, the remedy must be a revelation of truth that heals the mind and wins back confidence. Fear cannot do this; only love can.", tags: ["Atonement", "Justice"] },
-            { voice: "George Fifield", title: "The Final Revelation", text: "In the end, the whole universe will see that God is love, and that His law is life. The destruction of the wicked will be seen as the inevitable result of their rejection of life, not an act of divine murder.", tags: ["Judgment", "Trinity"] },
-
+            
             // Miroslav Volf
             { voice: "Miroslav Volf", title: "The Will to Embrace", text: "The cross is the drama of the 'will to embrace.' God does not wait for the offender to repent before offering forgiveness; He opens His arms first, creating the space for repentance to happen.", tags: ["Justice", "Non-Violence"] },
             { voice: "Miroslav Volf", title: "Memory and Redemption", text: "Redemption does not mean forgetting the evil done to us, but remembering it truthfully and then choosing to release the debt. We remember the wound, but we no longer let it define the future.", tags: ["Judgment", "Justice"] },
-            { voice: "Miroslav Volf", title: "Exclusion as Sin", text: "Sin is 'exclusion'—shutting the other out of our world. Salvation is the breaking down of walls and the reintegration of the other into the fellowship of humanity and God.", tags: ["Scapegoat", "Atonement"] },
-            { voice: "Miroslav Volf", title: "Justice as Restoration", text: "True justice is not merely the punishment of the offender but the restoration of the relationship. It requires the offender to name their deed as evil, but the goal is always community, not retribution.", tags: ["Justice", "Judgment"] },
-            { voice: "Miroslav Volf", title: "The Risk of Grace", text: "The embrace of the cross is risky. It opens God to further rejection. But there is no other way to break the cycle of violence. Grace must precede justice for justice to be restorative.", tags: ["Non-Violence", "Atonement"] },
-            { voice: "Miroslav Volf", title: "Identity and Otherness", text: "We often construct our identity by differentiating ourselves from 'enemies.' Christ calls us to find our identity in Him, which frees us to welcome the 'other' without fear of losing ourselves.", tags: ["Scapegoat", "Trinity"] },
-            { voice: "Miroslav Volf", title: "The Non-Innocence of Victims", text: "Victims are not automatically innocent. While they are innocent of the specific crime against them, they often become perpetrators in their turn. The cross breaks this cycle by offering grace to both victim and victimizer.", tags: ["Justice", "Scapegoat"] },
-            { voice: "Miroslav Volf", title: "Forgiveness Requires Blame", text: "You cannot forgive what you do not blame. To forgive is to name the act as evil and the perpetrator as guilty, and *then* to choose not to count it against them. Cheap grace ignores the blame; true grace absorbs it.", tags: ["Judgment", "Justice"] },
-            { voice: "Miroslav Volf", title: "God's Anger is Love", text: "God's anger is not the opposite of His love; it is the expression of His love for the victim. He is angry because He cares. A God who was not angry at injustice would be a God who did not love.", tags: ["Judgment", "Trinity"] },
-            { voice: "Miroslav Volf", title: "Double Vision", text: "To embrace the other, we must learn to see the world through their eyes. We need 'double vision'—seeing from our perspective and theirs simultaneously—to understand the truth of a conflict.", tags: ["Justice", "Non-Violence"] },
-            { voice: "Miroslav Volf", title: "The End of Memory", text: "In the final redemption, there may be a 'holy forgetting' of the non-redemptive aspects of our suffering. When the wound is fully healed, the memory of the pain no longer serves a purpose.", tags: ["Judgment", "Atonement"] },
-            { voice: "Miroslav Volf", title: "Distance and Belonging", text: "Embrace requires distance. If we are absorbed into one another, there is no relationship. True love preserves the distinctness of the other while maintaining an unbreakable bond of belonging.", tags: ["Trinity", "Justice"] },
-            { voice: "Miroslav Volf", title: "The Trinity as Social Model", text: "The Trinity is the model for human society: distinct persons in perfect communion (perichoresis). We are called to reflect this divine life, neither dissolving into a collective nor isolating into individualism.", tags: ["Trinity", "Justice"] },
-            { voice: "Miroslav Volf", title: "Embrace is not Absorption", text: "Embracing the enemy does not mean agreeing with them or becoming like them. It means refusing to let their enmity define the relationship. It is an act of sovereign love.", tags: ["Non-Violence", "Scapegoat"] },
-            { voice: "Miroslav Volf", title: "The Sword of the State", text: "While the individual Christian is called to absolute non-violence, the state may bear the sword to restrain evil. However, the church must never identify itself with the state or bless its violence.", tags: ["Justice", "Non-Violence"] },
-            { voice: "Miroslav Volf", title: "Cain and Abel", text: "The first murder was an act of exclusion. Cain could not bear the existence of the brother who was favored. The history of violence is the history of brothers unable to share the world.", tags: ["Scapegoat", "Judgment"] },
-            { voice: "Miroslav Volf", title: "Repentance as Return", text: "Repentance is not just feeling bad; it is the act of turning back toward the open arms of the Father. It is the human response to the divine initiative of embrace.", tags: ["Atonement", "Judgment"] },
-            { voice: "Miroslav Volf", title: "Hospitality", text: "Christianity is the practice of hospitality to the stranger. By welcoming the stranger, we welcome Christ. This is not just a social nicety; it is a theological imperative.", tags: ["Justice", "Trinity"] },
-            { voice: "Miroslav Volf", title: "Love of Enemy", text: "Loving the enemy is the ultimate test of Christian faith. It proves that our love is grounded in God, not in the worthiness of the object. It is the only force capable of turning an enemy into a friend.", tags: ["Non-Violence", "Atonement"] },
-            { voice: "Miroslav Volf", title: "The Final Reconciliation", text: "The goal of history is the reconciliation of all things in Christ. The New Jerusalem has gates that never shut, inviting the nations to bring their glory inside.", tags: ["Atonement", "Trinity"] },
-            { voice: "Miroslav Volf", title: "Self-Donation", text: "God does not hoard His life; He gives it away. The logic of the Trinity is self-donation. We are most like God when we give ourselves for the good of the other.", tags: ["Trinity", "Justice"] },
-
-            // Derek Flood
-            { voice: "Derek Flood", title: "Disarming Scripture", text: "We must read the Bible with a 'hermeneutic of love.' When we encounter violent portraits of God in the text, we must recognize them as 'texts in travail,' pointing toward the non-violent resolution revealed in Christ.", tags: ["Non-Violence", "Judgment"] },
-            { voice: "Derek Flood", title: "Correction, Not Confirmation", text: "Jesus did not come to confirm our violent ideas about God; He came to correct them. The Sermon on the Mount is a direct refutation of the 'eye for an eye' theology found elsewhere in scripture.", tags: ["Trinity", "Justice"] },
-            { voice: "Derek Flood", title: "The Dark Side", text: "The 'dark side' of God in the Old Testament is not a revelation of His nature, but a reflection of the fallen human heart projected onto God. Jesus is the true image.", tags: ["Atonement", "Trinity"] },
-            { voice: "Derek Flood", title: "Progressive Revelation", text: "Revelation is a trajectory. God meets people where they are (in their violence) to lead them to where He is (enemy love). We must read the Bible moving forward toward Jesus, not backward toward Joshua.", tags: ["Judgment", "Non-Violence"] },
-            { voice: "Derek Flood", title: "Atonement as Healing", text: "The logic of the cross is restorative justice. It heals the victim and the victimizer. It is not about satisfying a legal requirement for punishment, but about breaking the power of sin.", tags: ["Atonement", "Justice"] },
-            { voice: "Derek Flood", title: "The Pedagogy of the Law", text: "The violent laws of the Old Testament were a concession to a hard-hearted people, a 'tutor' to lead them toward Christ. Once the reality of Christ has come, we no longer live under the tutor.", tags: ["Justice", "Judgment"] },
-            { voice: "Derek Flood", title: "Faithfulness over Fear", text: "Fear-based theology demands a violent God to keep order. Faith-based theology trusts that the non-violent way of Jesus is actually powerful enough to save the world.", tags: ["Non-Violence", "Justice"] },
-            { voice: "Derek Flood", title: "The Trajectory of Justice", text: "Biblical justice moves from retribution (unlimited revenge) to *lex talionis* (limited revenge) to the Sermon on the Mount (no revenge). We must follow the trajectory to its conclusion in Christ.", tags: ["Justice", "Judgment"] },
-            { voice: "Derek Flood", title: "Questioning Authority", text: "Faithful questioning is part of the biblical tradition. The prophets frequently questioned the establishment's view of God. Jesus questioned the scribes. We are called to question interpretations that portray God as a moral monster.", tags: ["Trinity", "Judgment"] },
-            { voice: "Derek Flood", title: "The Cross and the Sword", text: "The cross is the end of the sword. When Peter drew his sword to defend Jesus, he was told to put it away. If we cannot use violence to defend the Son of God, we cannot use it for anything else.", tags: ["Non-Violence", "Scapegoat"] },
-            { voice: "Derek Flood", title: "Wrath as Consequence", text: "Divine wrath is intrinsic, not extrinsic. It is the natural consequence of turning away from Life. It is organic to the sin itself, not an arbitrary penalty imposed from the outside.", tags: ["Judgment", "Justice"] },
-            { voice: "Derek Flood", title: "Restorative Justice", text: "God's justice makes things right; it does not just balance the scales of pain. Restorative justice seeks to heal the harm caused by the crime and reintegrate the offender into the community.", tags: ["Justice", "Atonement"] },
-            { voice: "Derek Flood", title: "The Myth of Redemptive Violence", text: "The world believes violence saves. The Gospel declares that violence only breeds more violence. Salvation comes through suffering love that absorbs violence without returning it.", tags: ["Non-Violence", "Scapegoat"] },
-            { voice: "Derek Flood", title: "Jesus is the Lens", text: "We cannot use the Old Testament to trump Jesus. Jesus is the final Word. If a text in the Old Testament contradicts the character of Jesus, we must re-evaluate our understanding of that text.", tags: ["Trinity", "Judgment"] },
-            { voice: "Derek Flood", title: "Accommodation", text: "God 'accommodates' His revelation to the moral capacity of the hearers. He spoke within their cultural framework of violence to slowly subvert it from the inside.", tags: ["Judgment", "Non-Violence"] },
-            { voice: "Derek Flood", title: "Enemy Love as God's Nature", text: "Loving enemies is not just a hard rule for humans; it is the revelation of God's own nature. God loves His enemies. That is why we are saved.", tags: ["Atonement", "Non-Violence"] },
-            { voice: "Derek Flood", title: "The Spirit of the Text", text: "Paul contrasts the 'letter that kills' with the 'Spirit that gives life.' Reading the letter (literalism) without the Spirit (love) leads to death and fundamentalism.", tags: ["Justice", "Trinity"] },
-            { voice: "Derek Flood", title: "Scapegoating", text: "Religion often functions as a scapegoating mechanism to create social cohesion. The Gospel exposes this mechanism. We can no longer unite by hating a common enemy.", tags: ["Scapegoat", "Non-Violence"] },
-            { voice: "Derek Flood", title: "Repentance", text: "Repentance (metanoia) means changing your mind. It is a shift in how we see God and the world. It is moving from a view of God as Retributor to God as Redeemer.", tags: ["Atonement", "Judgment"] },
-            { voice: "Derek Flood", title: "Forgiveness is Unconditional", text: "If forgiveness requires a payment (like penal substitution), it is not forgiveness; it is a transaction. True forgiveness cancels the debt without demanding payment.", tags: ["Atonement", "Justice"] },
-            { voice: "Derek Flood", title: "The Healing of the Nations", text: "The trajectory of scripture ends in Revelation not with the destruction of the nations, but with their healing. The leaves of the tree are for the healing of the nations.", tags: ["Judgment", "Trinity"] },
-
-            // J. Denny Weaver
-            { voice: "J. Denny Weaver", title: "Narrative Christus Victor", text: "The atonement is a narrative of conflict where the non-violent Jesus confronts the powers of systemic evil. He defeats them not by a superior force, but by exposing their violence and rising from the dead.", tags: ["Atonement", "Non-Violence"] },
-            { voice: "J. Denny Weaver", title: "Rejection of Satisfaction", text: "The idea that God needed a death to satisfy justice (Satisfaction Theory) projects a feudal legal system onto God. The God of Jesus does not need blood to forgive; He needs us to stop killing.", tags: ["Justice", "Scapegoat"] },
-            { voice: "J. Denny Weaver", title: "The Cross as Human Violence", text: "The cross was not a requirement of God's law, but the inevitable result of God's love entering a violent world. We killed Him; God raised Him.", tags: ["Trinity", "Judgment"] },
-            { voice: "J. Denny Weaver", title: "The Non-Violent God", text: "If Jesus is the full revelation of God, and Jesus was non-violent, then God is non-violent. Any theology that requires God to use violence to save us creates a split in the Trinity.", tags: ["Trinity", "Non-Violence"] },
-            { voice: "J. Denny Weaver", title: "Resurrection as Vindication", text: "The resurrection is God's 'Yes' to the way of Jesus and 'No' to the powers that killed Him. It proves that non-violent love is the ultimate power in the universe.", tags: ["Justice", "Atonement"] },
-            { voice: "J. Denny Weaver", title: "The Anselmian Error", text: "Anselm's satisfaction theory portrays God as a feudal lord whose honor has been offended. This image traps God in a legal system where He cannot simply forgive but must exact a payment.", tags: ["Atonement", "Justice"] },
-            { voice: "J. Denny Weaver", title: "Salvation as Liberation", text: "Salvation is not just a transaction for the afterlife; it is liberation from the powers of slavery, racism, and violence in this life. It is joining the non-violent reign of God.", tags: ["Justice", "Judgment"] },
-            { voice: "J. Denny Weaver", title: "The Two Narratives", text: "There are two competing narratives: the myth of redemptive violence (peace through force) and the gospel of peace (peace through suffering love). The church must choose which story it inhabits.", tags: ["Non-Violence", "Scapegoat"] },
-            { voice: "J. Denny Weaver", title: "God is Not Janus-Faced", text: "We cannot have a God who commands us to love our enemies but reserves the right to destroy His own. God's character is consistent; what we see in Jesus is the whole truth.", tags: ["Trinity", "Judgment"] },
-            { voice: "J. Denny Weaver", title: "Sin as Systemic", text: "Sin is not just individual moral failure; it is participation in systemic evil (the 'Powers'). The cross exposes these systems (Rome, Religion) as bankrupt and violent.", tags: ["Judgment", "Justice"] },
-            { voice: "J. Denny Weaver", title: "The Meaning of Blood", text: "The blood of Jesus does not appease an angry Father. It signifies the life of Jesus given up to the point of death. It is the cost of non-violent resistance, not a payment to a deity.", tags: ["Atonement", "Scapegoat"] },
-            { voice: "J. Denny Weaver", title: "Ethical Atonement", text: "You cannot separate the theology of atonement from the ethics of the believer. If we are saved by non-violent love, we must live by non-violent love. An atonement that allows for war is a false atonement.", tags: ["Non-Violence", "Justice"] },
-            { voice: "J. Denny Weaver", title: "Accommodating Violence", text: "Classic atonement theories often accommodate the sword of the state. Narrative Christus Victor challenges the state's monopoly on violence by declaring Jesus as the only true Lord.", tags: ["Justice", "Judgment"] },
-            { voice: "J. Denny Weaver", title: "The Resurrection is Central", text: "In penal substitution, the resurrection is an afterthought—a happy ending to the payment. In Christus Victor, the resurrection *is* the victory. Without it, death wins.", tags: ["Atonement", "Trinity"] },
-            { voice: "J. Denny Weaver", title: "The Trap of Necessity", text: "To say the cross was 'necessary' to satisfy God makes violence internal to God's nature. The cross was necessary only because humans are violent, and God refused to bypass our freedom.", tags: ["Trinity", "Non-Violence"] },
-            { voice: "J. Denny Weaver", title: "Forgiveness is Free", text: "The parable of the Prodigal Son shows a father who runs to welcome the son without demanding a sacrifice or payment. This is the true picture of divine forgiveness.", tags: ["Atonement", "Justice"] },
-            { voice: "J. Denny Weaver", title: "Destroying the Destroyer", text: "Jesus partook of flesh and blood so that 'through death he might destroy him who has the power of death, that is, the devil' (Hebrews 2:14). This is the definition of victory.", tags: ["Judgment", "Atonement"] },
-            { voice: "J. Denny Weaver", title: "Divine Abuse?", text: "If God the Father demands the violent death of His Son to satisfy His own anger, this looks indistinguishable from cosmic child abuse. The narrative view avoids this by positing the violence as wholly human.", tags: ["Trinity", "Scapegoat"] },
-            { voice: "J. Denny Weaver", title: "The Revelation of Revelation", text: "The book of Revelation is not a script for future violence; it is the unveiling of the Lamb who was slain. The Lion *is* the Lamb. God conquers by self-sacrifice, not by becoming a super-Roman emperor.", tags: ["Judgment", "Non-Violence"] },
-            { voice: "J. Denny Weaver", title: "Justice as Life", text: "Divine justice is not checking a box on a legal ledger; it is the restoration of life where death had reigned. It is making the creation whole again.", tags: ["Justice", "Trinity"] },
-            { voice: "J. Denny Weaver", title: "The Political Jesus", text: "Jesus was not executed for telling people to be nice. He was executed because his non-violent Kingdom threatened the violent order of Rome and the Temple.", tags: ["Justice", "Scapegoat"] },
-
-            // Robert J. Wieland
-            { voice: "Robert J. Wieland", title: "Agape is the Key", text: "The love revealed at the cross is 'agape'—a love that seeks nothing for itself. This is distinct from human love ('eros'). Only a clear view of agape can melt the heart and produce genuine repentance.", tags: ["Atonement", "Trinity"] },
-            { voice: "Robert J. Wieland", title: "Corporate Repentance", text: "We are not isolated individuals; we are part of the corporate body of humanity. We share in the guilt of the crucifixion not by personal act, but by nature. True repentance acknowledges our solidarity with the crucifiers.", tags: ["Judgment", "Scapegoat"] },
-            { voice: "Robert J. Wieland", title: "Legalism vs. Gospel", text: "Legalism is the attempt to produce righteousness by the law. The Gospel is the revelation of God's righteousness already given in Christ. We do not obey to be saved; we obey because we are saved.", tags: ["Justice", "Judgment"] },
-            { voice: "Robert J. Wieland", title: "The Cleansing of the Sanctuary", text: "The final atonement involves the cleansing of the human heart from the very desire to sin. It is the restoration of the mind of Christ in the corporate body of His people.", tags: ["Atonement", "Judgment"] },
-            { voice: "Robert J. Wieland", title: "Faith is Appreciation", text: "Saving faith is a heart appreciation of what Christ has already done. It is not a work we do to earn salvation, but a response to the reality of the salvation He accomplished.", tags: ["Justice", "Trinity"] },
-            { voice: "Robert J. Wieland", title: "The Cross Redeems from Self", text: "The root of all sin is self-love. The cross is the only power in the universe that can break the gravitational pull of self and set the heart free to love God and neighbor.", tags: ["Non-Violence", "Atonement"] },
-            { voice: "Robert J. Wieland", title: "Objective Salvation", text: "Christ is the Savior of the world, not just the potential Savior. He has already redeemed the human race. The only reason anyone is lost is that they willfully reject what has already been given.", tags: ["Atonement", "Justice"] },
-            { voice: "Robert J. Wieland", title: "In Christ", text: "When Christ died, humanity died with Him. 'One died for all, therefore all died.' This is the legal and corporate reality. Faith is entering into that reality.", tags: ["Atonement", "Trinity"] },
-            { voice: "Robert J. Wieland", title: "The New Covenant", text: "The New Covenant is not a deal we make with God. It is God's one-sided promise to write His law in our hearts. It rests entirely on His faithfulness, not ours.", tags: ["Justice", "Judgment"] },
-            { voice: "Robert J. Wieland", title: "The Faith of Jesus", text: "We are saved by the faith *of* Jesus, not just our faith *in* Jesus. His perfect trust in the Father, even in the darkness of the cross, is the gift given to us.", tags: ["Atonement", "Trinity"] },
-            { voice: "Robert J. Wieland", title: "The 1888 Message", text: "The message rejected by the church in 1888 was the message of Righteousness by Faith—that Christ has already accomplished everything necessary, and our part is to receive it.", tags: ["Justice", "Judgment"] },
-            { voice: "Robert J. Wieland", title: "Motivation Matters", text: "Obedience motivated by fear of hell or hope of reward is essentially selfish. It is 'eros' trying to be religious. True obedience springs spontaneously from a heart captivated by 'agape'.", tags: ["Non-Violence", "Justice"] },
-            { voice: "Robert J. Wieland", title: "The Condemnation", text: "The condemnation is not that men are born sinners, but that 'light has come into the world, and men loved darkness.' We are condemned only for rejecting the Remedy.", tags: ["Judgment", "Justice"] },
-            { voice: "Robert J. Wieland", title: "Healing the Breach", text: "Sin caused a breach between heaven and earth. Christ, the second Adam, healed that breach. He is the ladder connecting the two. The connection is already re-established.", tags: ["Trinity", "Atonement"] },
-            { voice: "Robert J. Wieland", title: "Universal Legal Justification", text: "Legally, the entire race was justified at the cross (Romans 5:18). This legal verdict allows God to give life to all men. However, effective justification requires our acceptance.", tags: ["Justice", "Judgment"] },
-            { voice: "Robert J. Wieland", title: "The Agony of the Cross", text: "Christ's agony was not physical torture, but the horror of the second death—the sense of total abandonment by God. He went into the darkness so we could have the light.", tags: ["Atonement", "Non-Violence"] },
-            { voice: "Robert J. Wieland", title: "Satan's Lies", text: "Satan's primary work is to misrepresent the character of God, painting Him as severe and exacting. The final generation must vindicate God's character by demonstrating His love.", tags: ["Scapegoat", "Judgment"] },
-            { voice: "Robert J. Wieland", title: "Imputed and Imparted", text: "We cannot separate imputed righteousness (legal standing) from imparted righteousness (character change). If you truly receive the one, the other inevitably follows.", tags: ["Justice", "Atonement"] },
-            { voice: "Robert J. Wieland", title: "Crucified with Christ", text: "Paul says, 'I am crucified with Christ.' This is not a metaphor. It is the recognition that my old selfish nature met its end 2,000 years ago. I must reckon it dead.", tags: ["Atonement", "Trinity"] },
-            { voice: "Robert J. Wieland", title: "The Bride of Christ", text: "Christ is waiting for His Bride to make herself ready. This readiness is not a work of merit, but the maturity of love—a people who love as He loves.", tags: ["Trinity", "Justice"] },
-            { voice: "Robert J. Wieland", title: "Beyond Fear", text: "Perfect love casts out fear. A theology based on fear produces rebels or slaves. A theology based on the cross produces sons and daughters.", tags: ["Non-Violence", "Justice"] },
             
             // The Analyst
             { voice: "The Analyst (AI Synthesis Voice)", title: "The Hermeneutic Trajectory", text: "The Bible should not be read as a flat surface where every verse carries equal weight. It is a trajectory—a progressive revelation moving from a tribal projection of divine violence toward the absolute clarity of the non-violent Christ.", tags: ["Trinity", "Non-Violence"] },
             { voice: "The Analyst (AI Synthesis Voice)", title: "Ontological Peace", text: "Non-violence is not merely a policy God adopts; it is His ontology. Because the Trinity is a perfect communion of self-giving love, violence has no place in God's being. Violence is always a distortion of creation, never an attribute of the Creator.", tags: ["Trinity", "Non-Violence"] },
-            { voice: "The Analyst (AI Synthesis Voice)", title: "The Scapegoat Mechanism", text: "René Girard’s anthropology reveals that human culture is founded on the 'single victim mechanism' to quell chaos. The Gospel is the anti-myth: instead of concealing the innocence of the victim to justify the community, it exposes the innocence of the Victim to judge the community.", tags: ["Scapegoat", "Justice"] },
-            { voice: "The Analyst (AI Synthesis Voice)", title: "Retributive vs. Restorative", text: "Human justice is retributive (balancing the scales of pain). Divine justice is restorative (putting the world back to rights). The Cross satisfies divine justice not by punishing a substitute, but by defeating the powers that corrupted the world.", tags: ["Justice", "Judgment"] },
-            { voice: "The Analyst (AI Synthesis Voice)", title: "Kenosis as Power", text: "Human power asserts itself by ascending. Divine power reveals itself by descending (Kenosis). The Cross redefines omnipotence not as the power to force, but as the unbreakable capacity to endure and forgive.", tags: ["Trinity", "Non-Violence"] },
-            { voice: "The Analyst (AI Synthesis Voice)", title: "The Judgment of Light", text: "John 3:19: 'This is the judgment: Light has come into the world.' Judgment is not a future sentence passed by a gavel; it is the present reality of how one reacts to the Truth. The reaction *is* the judgment.", tags: ["Judgment", "Justice"] },
             
-            // F. T. Wright (Sample)
-            { voice: "F. T. Wright", title: "The Wrath of God", text: "The wrath of God is not an emotional outburst of anger, nor a judicial execution. As defined in Romans 1, it is God 'giving them up' to the consequences of their own choices. It is the pain of a lover letting go.", tags: ["Judgment", "Non-Violence"] },
-            { voice: "F. T. Wright", title: "Sin is the Destroyer", text: "Sin carries the seed of its own destruction. God does not need to kill the sinner; He only needs to cease sustaining the life of the rebel, and death is the inevitable natural consequence.", tags: ["Judgment", "Justice"] },
-            
-            // René Girard (Sample)
-            { voice: "René Girard", title: "The Scapegoat Mechanism", text: "Communities unify by channeling violence toward a single victim.", tags: ["Non-Violence"] }
+            // Derek Flood
+            { voice: "Derek Flood", title: "Disarming Scripture", text: "We must read the Bible with a 'hermeneutic of love.' When we encounter violent portraits of God in the text, we must recognize them as 'texts in travail,' pointing toward the non-violent resolution revealed in Christ.", tags: ["Non-Violence", "Judgment"] },
+            { voice: "Derek Flood", title: "Correction, Not Confirmation", text: "Jesus did not come to confirm our violent ideas about God; He came to correct them. The Sermon on the Mount is a direct refutation of the 'eye for an eye' theology found elsewhere in scripture.", tags: ["Trinity", "Justice"] },
+
+            // J. Denny Weaver
+            { voice: "J. Denny Weaver", title: "Narrative Christus Victor", text: "The atonement is a narrative of conflict where the non-violent Jesus confronts the powers of systemic evil. He defeats them not by a superior force, but by exposing their violence and rising from the dead.", tags: ["Atonement", "Non-Violence"] },
+            { voice: "J. Denny Weaver", title: "Rejection of Satisfaction", text: "The idea that God needed a death to satisfy justice (Satisfaction Theory) projects a feudal legal system onto God. The God of Jesus does not need blood to forgive; He needs us to stop killing.", tags: ["Justice", "Scapegoat"] },
+
+            // Robert J. Wieland
+            { voice: "Robert J. Wieland", title: "Agape is the Key", text: "The love revealed at the cross is 'agape'—a love that seeks nothing for itself. This is distinct from human love ('eros'). Only a clear view of agape can melt the heart and produce genuine repentance.", tags: ["Atonement", "Trinity"] },
+            { voice: "Robert J. Wieland", title: "Corporate Repentance", text: "We are not isolated individuals; we are part of the corporate body of humanity. We share in the guilt of the crucifixion not by personal act, but by nature. True repentance acknowledges our solidarity with the crucifiers.", tags: ["Judgment", "Scapegoat"] }
         ];
 
-        class CrossStore {
-            constructor() {
-                this.db = new Dexie("CrossPerspectivesDB");
-                this.db.version(1).stores({ insights: '++id, voice, title, *tags, created_at' });
-            }
+        const app = {
+            active: null,
+
             async init() {
-                if (!this.db.isOpen()) await this.db.open();
+                await store.init();
                 
-                // AUTO-SEEDER: Smart Merge Logic
-                // 1. Get all unique voices currently in the DB
-                const knownVoices = await this.db.insights.orderBy('voice').uniqueKeys();
-                
-                // 2. Filter SEED_DATA for voices that are NOT yet in the DB
+                // Smart Merge Seeding Logic
+                const knownVoices = await store.db.insights.orderBy('voice').uniqueKeys();
                 const missingSeeds = SEED_DATA.filter(seed => !knownVoices.includes(seed.voice));
 
                 if (missingSeeds.length > 0) {
-                    console.log("Found new content in seed data. Merging...");
+                    console.log(`Auto-Merging ${missingSeeds.length} new insights...`);
                     const now = new Date();
-                    // Add timestamps to seed data to ensure correct sorting
                     const toAdd = missingSeeds.map((item, index) => ({
                         ...item,
-                        created_at: new Date(now.getTime() - (index * 1000)).toISOString() // Stagger times slightly
+                        created_at: new Date(now.getTime() - (index * 1000)).toISOString()
                     }));
-                    await this.db.insights.bulkAdd(toAdd);
-                    console.log(`Merged ${toAdd.length} new insights.`);
+                    await store.db.insights.bulkAdd(toAdd);
+                    document.getElementById('status-indicator').textContent = "Updated with new content";
                 } else {
-                    console.log("Database up to date. No new seeds required.");
+                    document.getElementById('status-indicator').textContent = "Persistent Storage Active";
                 }
+
+                // Setup UI
+                this.renderDropdown();
+                this.render();
+            },
+
+            renderDropdown() {
+                const select = document.getElementById('voice-select');
+                LOCAL_VOICES.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v;
+                    option.textContent = v;
+                    select.appendChild(option);
+                });
+            },
+
+            async render() {
+                const data = this.active ? await store.getByVoice(this.active) : await store.getAll();
+                const grid = document.getElementById('grid');
+
+                // Update Title
+                document.getElementById('view-title').innerText = this.active || "All Perspectives";
+
+                if (data.length === 0) {
+                    grid.innerHTML = this.renderEmptyState();
+                    return;
+                }
+
+                // Check if Renderers object exists (from cp-renderers.js), otherwise use local fallback
+                if (typeof Renderers !== 'undefined' && Renderers.insightCard) {
+                    grid.innerHTML = data.map(Renderers.insightCard).join('');
+                } else {
+                    grid.innerHTML = data.map(item => this.localRenderCard(item)).join('');
+                }
+            },
+
+            // Fallback renderer if cp-renderers.js is missing or incompatible
+            localRenderCard(i) {
+                return `
+                <div class="bg-[#151F32] border border-slate-700/50 rounded-xl p-8 hover:border-slate-600 transition-colors shadow-sm group">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-500/90 bg-emerald-500/10 px-2 py-1 rounded">
+                                    ${i.voice}
+                                </span>
+                                <span class="text-[11px] font-mono text-slate-500">
+                                    ${new Date(i.created_at).toLocaleDateString()}
+                                </span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-100 group-hover:text-emerald-400 transition-colors font-serif">${i.title}</h3>
+                        </div>
+                    </div>
+                    <p class="font-serif text-[18px] leading-relaxed text-slate-300 mb-6 border-l-2 border-slate-800 pl-4 group-hover:border-emerald-500/30 transition-colors">
+                        ${i.text}
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        ${(i.tags || []).map(t => `
+                            <span class="text-[10px] uppercase font-bold tracking-wide px-2.5 py-1 rounded-md bg-[#0B1120] border border-slate-700 text-slate-400 group-hover:text-slate-300 group-hover:border-slate-600 transition-colors">
+                                ${t}
+                            </span>
+                        `).join('')}
+                    </div>
+                </div>`;
+            },
+
+            renderEmptyState() {
+                return `
+                <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/20">
+                    <div class="text-slate-600 mb-2 text-4xl">∅</div>
+                    <p class="text-slate-500 font-medium text-sm">No insights found.</p>
+                </div>`;
+            },
+
+            filterBy(val) {
+                this.active = val;
+                this.render();
+                document.getElementById('scroll-container').scrollTop = 0;
             }
-            async getAll() { return await this.db.insights.orderBy('created_at').reverse().toArray(); }
-            async getByVoice(voice) { return await this.db.insights.where('voice').equals(voice).toArray(); }
-        }
-
-        const store = new CrossStore();
-    </script>
-
-    <!-- Main Application Logic -->
-    <script>
-        const state = {
-            allInsights: [],
-            filteredInsights: [],
-            selectedVoices: new Set(),
-            selectedTags: new Set(),
-            searchQuery: '',
-            sortBy: 'recent',
-            viewMode: 'voice', 
-            selectedInsight: null,
-            voiceColors: {}
         };
 
-        const colorPalette = [
-            { bg: 'bg-violet-500/20', border: 'border-violet-500', text: 'text-violet-300', accent: '#8b5cf6' },
-            { bg: 'bg-purple-500/20', border: 'border-purple-500', text: 'text-purple-300', accent: '#a855f7' },
-            { bg: 'bg-fuchsia-500/20', border: 'border-fuchsia-500', text: 'text-fuchsia-300', accent: '#d946ef' },
-            { bg: 'bg-pink-500/20', border: 'border-pink-500', text: 'text-pink-300', accent: '#ec4899' },
-            { bg: 'bg-rose-500/20', border: 'border-rose-500', text: 'text-rose-300', accent: '#f43f5e' },
-            { bg: 'bg-blue-500/20', border: 'border-blue-500', text: 'text-blue-300', accent: '#3b82f6' },
-            { bg: 'bg-cyan-500/20', border: 'border-cyan-500', text: 'text-cyan-300', accent: '#06b6d4' },
-            { bg: 'bg-emerald-500/20', border: 'border-emerald-500', text: 'text-emerald-300', accent: '#10b981' },
-            { bg: 'bg-amber-500/20', border: 'border-amber-500', text: 'text-amber-300', accent: '#f59e0b' },
-            { bg: 'bg-orange-500/20', border: 'border-orange-500', text: 'text-orange-300', accent: '#f97316' }
-        ];
-
-        function assignVoiceColors(voices) {
-            voices.forEach((voice, index) => {
-                state.voiceColors[voice] = colorPalette[index % colorPalette.length];
-            });
-        }
-
-        async function init() {
-            try {
-                await store.init();
-                const data = await store.getAll();
-                
-                state.allInsights = data;
-                state.filteredInsights = [...data];
-                
-                if (CONFIG && CONFIG.VOICES) {
-                    assignVoiceColors(CONFIG.VOICES);
-                }
-                
-                initFilters();
-                updateStats();
-                renderView();
-                
-                document.getElementById('loadingState').classList.add('hidden');
-                document.getElementById('contentArea').classList.remove('hidden');
-                
-            } catch (error) {
-                console.error('Failed to initialize:', error);
-                document.getElementById('loadingState').innerHTML = `
-                    <div class="text-center">
-                        <p class="text-red-400 text-lg">Error loading data</p>
-                        <p class="text-zinc-500 text-sm mt-2">${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        function initFilters() {
-            // Header Dropdown (Global Filter)
-            const headerSelect = document.getElementById('headerVoiceSelect');
-            if (CONFIG && CONFIG.VOICES) {
-                CONFIG.VOICES.forEach(voice => {
-                    const option = document.createElement('option');
-                    option.value = voice;
-                    option.textContent = voice;
-                    headerSelect.appendChild(option);
-                });
-            }
-            
-            headerSelect.addEventListener('change', (e) => {
-                const selected = e.target.value;
-                state.selectedVoices.clear();
-                if (selected) state.selectedVoices.add(selected);
-                syncSidebarCheckboxes();
-                applyFilters();
-            });
-
-            // Sidebar Voice Filters
-            const voiceFiltersDiv = document.getElementById('voiceFilters');
-            if (CONFIG && CONFIG.VOICES) {
-                CONFIG.VOICES.forEach(voice => {
-                    const colors = state.voiceColors[voice];
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center space-x-2 group cursor-pointer';
-                    div.setAttribute('data-voice', voice); 
-                    div.innerHTML = `
-                        <input type="checkbox" id="voice-${voice}" class="hidden" />
-                        <div class="w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all"></div>
-                        <label class="text-sm ${colors.text} cursor-pointer flex-1 select-none">${voice}</label>
-                    `;
-                    div.addEventListener('click', () => toggleVoiceFilter(voice, div));
-                    voiceFiltersDiv.appendChild(div);
-                });
-            }
-
-            // Tag Filters
-            const tagFiltersDiv = document.getElementById('tagFilters');
-            if (CONFIG && CONFIG.TAGS) {
-                CONFIG.TAGS.forEach(tag => {
-                    const pill = document.createElement('button');
-                    pill.className = 'tag-pill px-3 py-1 bg-zinc-800 text-zinc-400 rounded-full text-xs font-medium hover:bg-zinc-700 transition-all';
-                    pill.textContent = tag;
-                    pill.addEventListener('click', () => toggleTagFilter(tag, pill));
-                    tagFiltersDiv.appendChild(pill);
-                });
-            }
-
-            // Other listeners
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                state.searchQuery = e.target.value.toLowerCase();
-                applyFilters();
-            });
-
-            document.getElementById('sortSelect').addEventListener('change', (e) => {
-                state.sortBy = e.target.value;
-                applyFilters();
-            });
-
-            document.getElementById('viewByVoice').addEventListener('click', () => switchView('voice'));
-            document.getElementById('viewByTag').addEventListener('click', () => switchView('tag'));
-            document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
-        }
-
-        function syncSidebarCheckboxes() {
-            const voiceElements = document.getElementById('voiceFilters').children;
-            for (let div of voiceElements) {
-                const voice = div.getAttribute('data-voice');
-                const colors = state.voiceColors[voice];
-                const checkbox = div.querySelector('input');
-                const indicator = div.querySelector('div');
-                
-                if (state.selectedVoices.has(voice)) {
-                    checkbox.checked = true;
-                    indicator.className = `w-4 h-4 rounded border-2 ${colors.border} flex items-center justify-center`;
-                    indicator.style.backgroundColor = colors.accent;
-                    indicator.style.borderColor = colors.accent;
-                    indicator.innerHTML = `<svg class="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>`;
-                } else {
-                    checkbox.checked = false;
-                    indicator.className = `w-4 h-4 rounded border-2 ${colors.border} group-hover:bg-zinc-700 transition-all`;
-                    indicator.style.backgroundColor = '';
-                    indicator.style.borderColor = '';
-                    indicator.innerHTML = '';
-                }
-            }
-        }
-
-        function syncHeaderDropdown() {
-            const dropdown = document.getElementById('headerVoiceSelect');
-            if (state.selectedVoices.size === 1) {
-                const val = state.selectedVoices.values().next().value;
-                dropdown.value = val;
-            } else {
-                dropdown.value = "";
-            }
-        }
-
-        function toggleVoiceFilter(voice, element) {
-            if (state.selectedVoices.has(voice)) {
-                state.selectedVoices.delete(voice);
-            } else {
-                state.selectedVoices.add(voice);
-            }
-            syncSidebarCheckboxes();
-            syncHeaderDropdown();
-            applyFilters();
-        }
-
-        function toggleTagFilter(tag, element) {
-            if (state.selectedTags.has(tag)) {
-                state.selectedTags.delete(tag);
-                element.classList.remove('bg-purple-600', 'text-white');
-                element.classList.add('bg-zinc-800', 'text-zinc-400');
-            } else {
-                state.selectedTags.add(tag);
-                element.classList.remove('bg-zinc-800', 'text-zinc-400');
-                element.classList.add('bg-purple-600', 'text-white');
-            }
-            applyFilters();
-        }
-
-        function switchView(mode) {
-            state.viewMode = mode;
-            const byVoiceBtn = document.getElementById('viewByVoice');
-            const byTagBtn = document.getElementById('viewByTag');
-            
-            if (mode === 'voice') {
-                byVoiceBtn.classList.remove('bg-zinc-800', 'text-zinc-400');
-                byVoiceBtn.classList.add('bg-purple-600', 'text-white');
-                byTagBtn.classList.remove('bg-purple-600', 'text-white');
-                byTagBtn.classList.add('bg-zinc-800', 'text-zinc-400');
-            } else {
-                byTagBtn.classList.remove('bg-zinc-800', 'text-zinc-400');
-                byTagBtn.classList.add('bg-purple-600', 'text-white');
-                byVoiceBtn.classList.remove('bg-purple-600', 'text-white');
-                byVoiceBtn.classList.add('bg-zinc-800', 'text-zinc-400');
-            }
-            renderView();
-        }
-
-        function clearAllFilters() {
-            state.selectedVoices.clear();
-            state.selectedTags.clear();
-            state.searchQuery = '';
-            document.getElementById('searchInput').value = '';
-            
-            syncSidebarCheckboxes();
-            syncHeaderDropdown();
-            
-            document.querySelectorAll('#tagFilters button').forEach(btn => {
-                btn.classList.remove('bg-purple-600', 'text-white');
-                btn.classList.add('bg-zinc-800', 'text-zinc-400');
-            });
-            applyFilters();
-        }
-
-        function applyFilters() {
-            let filtered = [...state.allInsights];
-            
-            if (state.selectedVoices.size > 0) {
-                filtered = filtered.filter(insight => state.selectedVoices.has(insight.voice));
-            }
-            
-            if (state.selectedTags.size > 0) {
-                filtered = filtered.filter(insight => 
-                    insight.tags && insight.tags.some(tag => state.selectedTags.has(tag))
-                );
-            }
-            
-            if (state.searchQuery) {
-                filtered = filtered.filter(insight => {
-                    const searchableText = `${insight.title} ${insight.text} ${insight.voice}`.toLowerCase();
-                    return searchableText.includes(state.searchQuery);
-                });
-            }
-            
-            filtered.sort((a, b) => {
-                switch (state.sortBy) {
-                    case 'recent': return new Date(b.created_at) - new Date(a.created_at);
-                    case 'oldest': return new Date(a.created_at) - new Date(b.created_at);
-                    case 'voice': return a.voice.localeCompare(b.voice);
-                    case 'title': return a.title.localeCompare(b.title);
-                    default: return 0;
-                }
-            });
-            
-            state.filteredInsights = filtered;
-            renderView();
-        }
-
-        function updateStats() {
-            document.getElementById('insightCount').textContent = 
-                `${state.filteredInsights.length} insight${state.filteredInsights.length !== 1 ? 's' : ''}`;
-            const uniqueVoices = new Set(state.filteredInsights.map(i => i.voice));
-            document.getElementById('voiceCount').textContent = 
-                `${uniqueVoices.size} voice${uniqueVoices.size !== 1 ? 's' : ''}`;
-        }
-
-        function renderView() {
-            updateStats();
-            const contentArea = document.getElementById('contentArea');
-            const emptyState = document.getElementById('emptyState');
-            
-            if (state.filteredInsights.length === 0) {
-                contentArea.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-                return;
-            }
-            
-            contentArea.classList.remove('hidden');
-            emptyState.classList.add('hidden');
-            
-            if (state.viewMode === 'voice') renderByVoice();
-            else renderByTag();
-        }
-
-        function renderByVoice() {
-            const contentArea = document.getElementById('contentArea');
-            const byVoice = {};
-            state.filteredInsights.forEach(insight => {
-                if (!byVoice[insight.voice]) byVoice[insight.voice] = [];
-                byVoice[insight.voice].push(insight);
-            });
-            
-            let html = '<div class="space-y-8">';
-            Object.entries(byVoice).forEach(([voice, insights]) => {
-                const colors = state.voiceColors[voice];
-                html += `
-                    <div class="voice-lane">
-                        <div class="flex items-center mb-4">
-                            <div class="w-1 h-8 ${colors.bg} ${colors.border} border-l-4 rounded mr-3"></div>
-                            <h3 class="text-xl font-bold ${colors.text}">${voice}</h3>
-                            <span class="ml-3 text-sm text-zinc-500">${insights.length} insight${insights.length !== 1 ? 's' : ''}</span>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-6">
-                `;
-                insights.forEach(insight => {
-                    html += createInsightCard(insight, colors);
-                });
-                html += `</div></div>`;
-            });
-            html += '</div>';
-            contentArea.innerHTML = html;
-            attachCardListeners();
-        }
-
-        function renderByTag() {
-            const contentArea = document.getElementById('contentArea');
-            const byTag = {};
-            state.filteredInsights.forEach(insight => {
-                if (insight.tags && insight.tags.length > 0) {
-                    insight.tags.forEach(tag => {
-                        if (!byTag[tag]) byTag[tag] = [];
-                        byTag[tag].push(insight);
-                    });
-                }
-            });
-            
-            let html = '<div class="space-y-8">';
-            Object.entries(byTag).sort(([a], [b]) => a.localeCompare(b)).forEach(([tag, insights]) => {
-                const voices = [...new Set(insights.map(i => i.voice))];
-                html += `
-                    <div class="tag-section">
-                        <div class="flex items-center mb-4">
-                            <div class="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold">${tag}</div>
-                            <span class="ml-3 text-sm text-zinc-500">${insights.length} insight${insights.length !== 1 ? 's' : ''} from ${voices.length} voice${voices.length !== 1 ? 's' : ''}</span>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-6">
-                `;
-                insights.forEach(insight => {
-                    const colors = state.voiceColors[insight.voice];
-                    html += createInsightCard(insight, colors);
-                });
-                html += `</div></div>`;
-            });
-            html += '</div>';
-            contentArea.innerHTML = html;
-            attachCardListeners();
-        }
-
-        function createInsightCard(insight, colors) {
-            const date = new Date(insight.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            const tags = insight.tags && insight.tags.length > 0 
-                ? insight.tags.map(tag => `<span class="px-2 py-1 bg-zinc-800 text-zinc-400 rounded text-xs">${tag}</span>`).join('')
-                : '';
-            
-            return `
-                <div class="insight-card ${colors.bg} border ${colors.border} rounded-lg p-4 cursor-pointer hover:shadow-lg hover:shadow-${colors.accent}/20 transition-all" data-insight='${JSON.stringify(insight).replace(/'/g, "&#39;")}'>
-                    <div class="flex items-start justify-between mb-2">
-                        <span class="text-xs ${colors.text} font-semibold">${insight.voice}</span>
-                        <span class="text-xs text-zinc-500">${date}</span>
-                    </div>
-                    <h4 class="text-sm font-semibold text-zinc-200 mb-2 line-clamp-2">${insight.title}</h4>
-                    <p class="text-xs text-zinc-400 line-clamp-3 mb-3">${insight.text}</p>
-                    <div class="flex flex-wrap gap-1">${tags}</div>
-                </div>
-            `;
-        }
-
-        function attachCardListeners() {
-            document.querySelectorAll('.insight-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    const insight = JSON.parse(card.dataset.insight);
-                    showDetail(insight);
-                });
-            });
-        }
-
-        // Fisher-Yates Shuffle for true randomness
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        function showDetail(insight) {
-            state.selectedInsight = insight;
-            const panel = document.getElementById('detailPanel');
-            const content = document.getElementById('detailContent');
-            
-            const colors = state.voiceColors[insight.voice];
-            const date = new Date(insight.created_at).toLocaleDateString('en-US', { 
-                month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
-            });
-            const tags = insight.tags && insight.tags.length > 0
-                ? insight.tags.map(tag => `<span class="px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full text-sm">${tag}</span>`).join('')
-                : '<span class="text-zinc-500 text-sm italic">No tags</span>';
-            
-            // Calculate overlapping voices for the dropdown
-            const connectedVoices = new Set();
-            if (insight.tags) {
-                state.allInsights.forEach(i => {
-                    if (i.voice !== insight.voice && i.tags && i.tags.some(t => insight.tags.includes(t))) {
-                        connectedVoices.add(i.voice);
-                    }
-                });
-            }
-
-            const dropdownOptions = Array.from(connectedVoices)
-                .map(v => `<option value="${v}">${v}</option>`)
-                .join('');
-
-            content.innerHTML = `
-                <div class="space-y-6">
-                    <div>
-                        <button onclick="closeDetail()" class="text-zinc-400 hover:text-zinc-200 transition-all mb-4">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
-                        <div class="flex items-center mb-2">
-                            <div class="w-1 h-8 ${colors.bg} ${colors.border} border-l-4 rounded mr-3"></div>
-                            <h3 class="text-xl font-bold ${colors.text}">${insight.voice}</h3>
-                        </div>
-                        <p class="text-xs text-zinc-500 ml-6">${date}</p>
-                    </div>
-                    <div>
-                        <h4 class="text-2xl font-bold text-zinc-100 mb-4">${insight.title}</h4>
-                        <div class="prose prose-invert prose-sm max-w-none">
-                            <p class="text-zinc-300 leading-relaxed">${insight.text}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <h5 class="text-sm font-semibold text-zinc-400 mb-2">Topics</h5>
-                        <div class="flex flex-wrap gap-2">${tags}</div>
-                    </div>
-                    
-                    <!-- Related Insights Section with Dropdown -->
-                    <div class="border-t border-zinc-800 pt-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h5 class="text-sm font-semibold text-zinc-400">Related Insights</h5>
-                            <select id="relatedVoiceFilter" class="bg-zinc-800 text-xs text-zinc-300 rounded px-2 py-1 border border-zinc-700 outline-none focus:border-purple-500 cursor-pointer">
-                                <option value="">Surprise Me (Shuffle)</option>
-                                ${dropdownOptions}
-                            </select>
-                        </div>
-                        <div id="relatedInsights" class="space-y-2">
-                            <p class="text-xs text-zinc-500 italic">Loading related insights...</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            panel.classList.remove('hidden');
-            
-            // Add listener to the new dropdown
-            document.getElementById('relatedVoiceFilter').addEventListener('change', (e) => {
-                loadRelatedInsights(insight, e.target.value);
-            });
-
-            // Initial load (randomized)
-            loadRelatedInsights(insight);
-        }
-
-        function closeDetail() {
-            document.getElementById('detailPanel').classList.add('hidden');
-            state.selectedInsight = null;
-        }
-        window.closeDetail = closeDetail;
-
-        function loadRelatedInsights(insight, filterVoice = null) {
-            const container = document.getElementById('relatedInsights');
-            
-            // 1. Filter candidates (must not be current card, must overlap tags)
-            let candidates = state.allInsights.filter(i => {
-                if (i === insight) return false;
-                if (filterVoice && i.voice !== filterVoice) return false; // Strict filter if selected
-                
-                // If filterVoice is selected, we already filtered by voice, so just check tags
-                // If NO filterVoice (Surprise Me), we check for ANY overlap (Voice OR Tag)
-                // Actually, standard logic is usually Tag overlap.
-                
-                const sameVoice = i.voice === insight.voice;
-                const hasTagOverlap = i.tags && insight.tags && i.tags.some(tag => insight.tags.includes(tag));
-                
-                if (filterVoice) {
-                    // If user specifically asked for this voice, just ensure it matches tag overlap or is relevant
-                    return hasTagOverlap;
-                }
-
-                // Default "Surprise Me" Logic:
-                return sameVoice || hasTagOverlap;
-            });
-
-            if (candidates.length === 0) {
-                container.innerHTML = '<p class="text-xs text-zinc-500 italic">No related insights found</p>';
-                return;
-            }
-
-            // 2. Shuffle! (This fixes the "Always F.T. Wright" bias)
-            shuffleArray(candidates);
-
-            // 3. Slice top 5
-            const related = candidates.slice(0, 5);
-            
-            container.innerHTML = related.map(r => {
-                const colors = state.voiceColors[r.voice];
-                return `
-                    <div class="p-3 bg-zinc-800 rounded-lg cursor-pointer hover:bg-zinc-750 transition-all border border-transparent hover:border-zinc-600" onclick='showDetail(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
-                        <div class="flex items-center justify-between mb-1">
-                            <span class="text-xs ${colors.text} font-semibold">${r.voice}</span>
-                        </div>
-                        <p class="text-sm text-zinc-300 line-clamp-2">${r.title}</p>
-                    </div>
-                `;
-            }).join('');
-        }
-        window.showDetail = showDetail;
-
-        window.addEventListener('DOMContentLoaded', init);
+        app.init();
     </script>
 </body>
 </html>
