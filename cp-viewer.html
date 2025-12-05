@@ -19,7 +19,7 @@
 </head>
 <body class="bg-[#0B1120] text-slate-300 h-screen flex flex-col overflow-hidden selection:bg-emerald-900 selection:text-white">
 
-    <!-- HEADER: Replaces Sidebar Navigation -->
+    <!-- HEADER -->
     <header class="flex-shrink-0 bg-[#0F172A]/80 backdrop-blur border-b border-slate-800/60 px-8 py-4 z-10">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             
@@ -31,12 +31,12 @@
                 </a>
             </div>
 
-            <!-- Voice Dropdown (The new navigation) -->
+            <!-- Voice Dropdown -->
             <div class="relative group min-w-[240px]">
                 <select id="voice-select" onchange="app.filterBy(this.value)" 
                     class="appearance-none w-full bg-[#1E293B] border border-slate-700 text-slate-200 text-sm font-medium rounded-lg pl-4 pr-10 py-2.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer hover:border-slate-600 shadow-lg shadow-black/20">
                     <option value="">All Perspectives</option>
-                    <!-- Options injected by JS -->
+                    <!-- Options injected by JS from database -->
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-emerald-400 transition-colors">
                     <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
@@ -61,87 +61,39 @@
     <!-- DEPENDENCIES -->
     <script src="cp-config.js"></script>
     <script src="cp-store.js"></script>
-    <!-- Use Renderers if available, otherwise fallback is inside -->
     <script src="cp-renderers.js"></script>
 
     <script>
-        // --- 1. LOCAL CONFIG OVERRIDE ---
-        // We define this locally to ensure the new voices appear even if cp-config.js is old.
-        const LOCAL_VOICES = [
-            "Graham Maxwell", "Marilyn Campbell", "F. T. Wright", "J. D. Myers", "Greg Boyd",
-            "René Girard", "Ellen G. White", "N. T. Wright", "Richard B. Hays", 
-            "Jürgen Moltmann", "John Chrysostom", "Tertullian", 
-            "George Fifield", "Miroslav Volf", "Derek Flood", "J. Denny Weaver", "Robert J. Wieland",
-            "The Analyst (AI Synthesis Voice)"
-        ];
-
-        // --- 2. SEED DATA INJECTION ---
-        const SEED_DATA = [
-            // N. T. Wright
-            { voice: "N. T. Wright", title: "New Creation vs. Going to Heaven", text: "The point of the gospel is not abandoning earth for a disembodied heaven, but the restoration of earth itself. God is coming here to dwell with his people in a renewed creation.", tags: ["Justice", "Judgment"] },
-            { voice: "N. T. Wright", title: "The Faithfulness of God", text: "Righteousness (dikaiosyne) in Paul often refers to God's covenant faithfulness. God promised to bless the world through Abraham's family, and despite their failure, He fulfilled this through the faithful Israelite, Jesus.", tags: ["Atonement", "Trinity"] },
-            { voice: "N. T. Wright", title: "Political Ecclesiology", text: "To say 'Jesus is Lord' was a politically subversive claim in the first century, because it implied 'Caesar is not.' The church is the polis of the coming Kingdom.", tags: ["Non-Violence", "Justice"] },
-            { voice: "N. T. Wright", title: "Resurrection is Bodily", text: "Resurrection does not mean 'life after death'; it means 'life *after* life after death.' It is the bodily raising of the dead to live in the new creation, of which Jesus is the prototype.", tags: ["Justice", "Judgment"] },
-            { voice: "N. T. Wright", title: "Justification is Ecclesial", text: "Justification is not how you *become* a Christian; it is the declaration that you *are* one. It is the law-court verdict that identifies the true members of the covenant family before the final judgment.", tags: ["Justice", "Judgment"] },
-            { voice: "N. T. Wright", title: "The Exhaustion of Evil", text: "On the cross, evil did its worst to Jesus, and He exhausted its power. He didn't just pay a penalty; He drew the infection of the world onto Himself and let it kill Him, thereby killing the infection.", tags: ["Atonement", "Non-Violence"] },
-            
-            // George Fifield
-            { voice: "George Fifield", title: "We Esteemed Him Stricken", text: "In Isaiah 53, the prophet says 'we esteemed him stricken, smitten of God.' This was the human view, but it was false. We thought God was killing Him, but in reality, 'He was wounded for our transgressions.' It was sin that killed Him, not the Father.", tags: ["Atonement", "Trinity"] },
-            { voice: "George Fifield", title: "The Wrath of Man vs. God", text: "There is a distinction between the wrath of God and the wrath of man. God's wrath is the withdrawing of His protection; man's wrath is active violence. At the cross, God withdrew, and the wrath of man and Satan did the killing.", tags: ["Judgment", "Non-Violence"] },
-            { voice: "George Fifield", title: "God Does Not Kill", text: "Jesus came to reveal the Father. Jesus never killed; He healed and saved. Therefore, the Father never kills. The sword that slays the wicked is not in God's hand, but is the result of separation from the Source of Life.", tags: ["Non-Violence", "Trinity"] },
-            
-            // Miroslav Volf
-            { voice: "Miroslav Volf", title: "The Will to Embrace", text: "The cross is the drama of the 'will to embrace.' God does not wait for the offender to repent before offering forgiveness; He opens His arms first, creating the space for repentance to happen.", tags: ["Justice", "Non-Violence"] },
-            { voice: "Miroslav Volf", title: "Memory and Redemption", text: "Redemption does not mean forgetting the evil done to us, but remembering it truthfully and then choosing to release the debt. We remember the wound, but we no longer let it define the future.", tags: ["Judgment", "Justice"] },
-            
-            // The Analyst
-            { voice: "The Analyst (AI Synthesis Voice)", title: "The Hermeneutic Trajectory", text: "The Bible should not be read as a flat surface where every verse carries equal weight. It is a trajectory—a progressive revelation moving from a tribal projection of divine violence toward the absolute clarity of the non-violent Christ.", tags: ["Trinity", "Non-Violence"] },
-            { voice: "The Analyst (AI Synthesis Voice)", title: "Ontological Peace", text: "Non-violence is not merely a policy God adopts; it is His ontology. Because the Trinity is a perfect communion of self-giving love, violence has no place in God's being. Violence is always a distortion of creation, never an attribute of the Creator.", tags: ["Trinity", "Non-Violence"] },
-            
-            // Derek Flood
-            { voice: "Derek Flood", title: "Disarming Scripture", text: "We must read the Bible with a 'hermeneutic of love.' When we encounter violent portraits of God in the text, we must recognize them as 'texts in travail,' pointing toward the non-violent resolution revealed in Christ.", tags: ["Non-Violence", "Judgment"] },
-            { voice: "Derek Flood", title: "Correction, Not Confirmation", text: "Jesus did not come to confirm our violent ideas about God; He came to correct them. The Sermon on the Mount is a direct refutation of the 'eye for an eye' theology found elsewhere in scripture.", tags: ["Trinity", "Justice"] },
-
-            // J. Denny Weaver
-            { voice: "J. Denny Weaver", title: "Narrative Christus Victor", text: "The atonement is a narrative of conflict where the non-violent Jesus confronts the powers of systemic evil. He defeats them not by a superior force, but by exposing their violence and rising from the dead.", tags: ["Atonement", "Non-Violence"] },
-            { voice: "J. Denny Weaver", title: "Rejection of Satisfaction", text: "The idea that God needed a death to satisfy justice (Satisfaction Theory) projects a feudal legal system onto God. The God of Jesus does not need blood to forgive; He needs us to stop killing.", tags: ["Justice", "Scapegoat"] },
-
-            // Robert J. Wieland
-            { voice: "Robert J. Wieland", title: "Agape is the Key", text: "The love revealed at the cross is 'agape'—a love that seeks nothing for itself. This is distinct from human love ('eros'). Only a clear view of agape can melt the heart and produce genuine repentance.", tags: ["Atonement", "Trinity"] },
-            { voice: "Robert J. Wieland", title: "Corporate Repentance", text: "We are not isolated individuals; we are part of the corporate body of humanity. We share in the guilt of the crucifixion not by personal act, but by nature. True repentance acknowledges our solidarity with the crucifiers.", tags: ["Judgment", "Scapegoat"] }
-        ];
-
         const app = {
             active: null,
 
             async init() {
                 await store.init();
                 
-                // Smart Merge Seeding Logic
-                const knownVoices = await store.db.insights.orderBy('voice').uniqueKeys();
-                const missingSeeds = SEED_DATA.filter(seed => !knownVoices.includes(seed.voice));
+                // Get total count and update status
+                const total = await store.db.insights.count();
+                document.getElementById('status-indicator').textContent = 
+                    total > 0 ? `${total} insights loaded` : "Database empty";
 
-                if (missingSeeds.length > 0) {
-                    console.log(`Auto-Merging ${missingSeeds.length} new insights...`);
-                    const now = new Date();
-                    const toAdd = missingSeeds.map((item, index) => ({
-                        ...item,
-                        created_at: new Date(now.getTime() - (index * 1000)).toISOString()
-                    }));
-                    await store.db.insights.bulkAdd(toAdd);
-                    document.getElementById('status-indicator').textContent = "Updated with new content";
-                } else {
-                    document.getElementById('status-indicator').textContent = "Persistent Storage Active";
-                }
-
-                // Setup UI
-                this.renderDropdown();
+                // Populate dropdown from database voices
+                await this.renderDropdown();
+                
+                // Render content
                 this.render();
             },
 
-            renderDropdown() {
+            async renderDropdown() {
                 const select = document.getElementById('voice-select');
-                LOCAL_VOICES.forEach(v => {
+                
+                // Get unique voices from database, sorted alphabetically
+                const voices = await store.db.insights
+                    .orderBy('voice')
+                    .uniqueKeys();
+                
+                voices.sort();
+                
+                // Add each voice as an option
+                voices.forEach(v => {
                     const option = document.createElement('option');
                     option.value = v;
                     option.textContent = v;
@@ -204,6 +156,9 @@
                 <div class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-slate-800 rounded-xl bg-slate-900/20">
                     <div class="text-slate-600 mb-2 text-4xl">∅</div>
                     <p class="text-slate-500 font-medium text-sm">No insights found.</p>
+                    <a href="cp-hub.html" class="mt-4 text-xs text-emerald-400 hover:text-emerald-300 transition-colors">
+                        → Add content in Studio Hub
+                    </a>
                 </div>`;
             },
 
