@@ -17,4 +17,5 @@ if (typeof Dexie === 'undefined') console.error("Dexie.js missing.");class Cross
     async getAll() { return await this.db.insights.orderBy('created_at').reverse().toArray(); }
     async getByVoice(voice) { return await this.db.insights.where('voice').equals(voice).toArray(); }
     async add(data) { return await this.db.insights.add({ ...data, created_at: new Date().toISOString() }); }
-}const store = new CrossStore();
+}
+window.store = new CrossStore();
